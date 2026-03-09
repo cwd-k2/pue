@@ -1,0 +1,14 @@
+<template>
+  <p>Injected theme: <strong>{{ theme }}</strong></p>
+</template>
+
+<script setup lang="purs">
+module Pue.InjectedChild where
+
+import Prelude
+import Pue (inject)
+
+setup = do
+  theme <- inject "theme" "default"
+  pure { theme }
+</script>
