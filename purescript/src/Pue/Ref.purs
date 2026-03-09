@@ -1,6 +1,7 @@
 module Pue.Ref
   ( Ref
-  , ref, shallowRef, computed, computedGetSet, customRef
+  , ref, shallowRef, computed, customRef
+  , focus
   , readRef
   , writeRef, modifyRef, triggerRef
   , readonly
@@ -60,8 +61,12 @@ instance BooleanAlgebra a => BooleanAlgebra (Ref a)
 foreign import ref :: forall a. a -> Effect (Ref a)
 foreign import shallowRef :: forall a. a -> Effect (Ref a)
 foreign import computed :: forall a. Effect a -> Effect (Ref a)
-foreign import computedGetSet :: forall a. Effect a -> (a -> Effect Unit) -> Effect (Ref a)
 foreign import customRef :: forall a. (Effect Unit -> Effect Unit -> { get :: Effect a, set :: a -> Effect Unit }) -> Effect (Ref a)
+
+-- | Bidirectional map over a Ref — a pure Ref-to-Ref combinator.
+-- | `focus get set source` creates a computed Ref that reads via `get`
+-- | and writes back to `source` via `set`.
+foreign import focus :: forall a b. (a -> b) -> (b -> a) -> Ref a -> Ref b
 
 -- Read
 foreign import readRef :: forall a. Ref a -> Effect a

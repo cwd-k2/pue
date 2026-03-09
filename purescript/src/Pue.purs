@@ -6,7 +6,7 @@ module Pue
   , module Pue.Component
   ) where
 
-import Pue.Ref (Ref, ref, shallowRef, computed, computedGetSet, customRef, readRef, writeRef, modifyRef, triggerRef, readonly)
+import Pue.Ref (Ref, ref, shallowRef, computed, customRef, focus, readRef, writeRef, modifyRef, triggerRef, readonly)
 import Pue.Watch (watch, watchImmediate, watchOnce, watchWith, watchEffect, watchPostEffect, watchSyncEffect)
 import Pue.Lifecycle (onBeforeMount, onMounted, onBeforeUpdate, onUpdated, onBeforeUnmount, onUnmounted, onActivated, onDeactivated, onErrorCaptured, nextTick)
 import Pue.Scope (EffectScope, effectScope, runScope, stopScope, onScopeDispose)
