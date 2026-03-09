@@ -198,7 +198,8 @@ export function pue(options: PueOptions = {}): Plugin {
 
     if (hasSetup) {
       const fields = extractRecordFields(pursCode)
-      const pureExports = exports.filter(e => e !== 'setup')
+      const fieldSet = new Set(fields ?? [])
+      const pureExports = exports.filter(e => e !== 'setup' && !fieldSet.has(e))
 
       if (fields && fields.length > 0) {
         if (pureExports.length > 0) {

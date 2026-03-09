@@ -1,27 +1,68 @@
 <template>
-  <div>
-    <h1>pue counter</h1>
-    <p>count: {{ count }}</p>
-    <p>doubled: {{ doubled }}</p>
-    <button @click="increment">+1</button>
-    <button @click="decrement">-1</button>
+  <div id="app">
+    <h1>pue playground</h1>
+    <p class="subtitle">{{ components.length }} components — PureScript in Vue SFCs</p>
+    <div class="grid">
+      <Counter />
+      <DoubleCounter />
+      <Fibonacci />
+      <Toggle />
+      <Stepper />
+      <Temperature />
+      <Collatz />
+      <Greeting />
+      <GCD />
+      <OptionsDemo />
+    </div>
   </div>
 </template>
 
-<script setup lang="purs">
-module Pue.App where
+<script setup>
+import Counter from './components/Counter.vue'
+import DoubleCounter from './components/DoubleCounter.vue'
+import Fibonacci from './components/Fibonacci.vue'
+import Toggle from './components/Toggle.vue'
+import Stepper from './components/Stepper.vue'
+import Temperature from './components/Temperature.vue'
+import Collatz from './components/Collatz.vue'
+import Greeting from './components/Greeting.vue'
+import GCD from './components/GCD.vue'
+import OptionsDemo from './components/OptionsDemo.vue'
 
-import Prelude
-import Effect (Effect)
-import Pue (Ref, ref, readRef, modifyRef, computed)
-
-setup :: Effect { count :: Ref Int, doubled :: Ref Int, increment :: Effect Unit, decrement :: Effect Unit }
-setup = do
-  count <- ref 0
-  doubled <- computed do
-    c <- readRef count
-    pure (c * 2)
-  let increment = modifyRef (_ + 1) count
-  let decrement = modifyRef (_ - 1) count
-  pure { count, doubled, increment, decrement }
+const components = [
+  'Counter', 'DoubleCounter', 'Fibonacci', 'Toggle', 'Stepper',
+  'Temperature', 'Collatz', 'Greeting', 'GCD', 'OptionsDemo',
+]
 </script>
+
+<style>
+#app {
+  font-family: system-ui, sans-serif;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+.subtitle {
+  color: #666;
+  margin-bottom: 2rem;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+.card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1rem;
+}
+.card h2 {
+  margin-top: 0;
+  font-size: 1.1rem;
+}
+.card button {
+  margin-right: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  cursor: pointer;
+}
+</style>
