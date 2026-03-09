@@ -1,0 +1,23 @@
+{
+  "name": "pue-vscode",
+  "displayName": "pue - PureScript in Vue SFCs",
+  "description": "Syntax highlighting for PureScript in Vue Single File Components",
+  "version": "0.0.1",
+  "publisher": "pue",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": ["Programming Languages"],
+  "contributes": {
+    "grammars": [
+      {
+        "scopeName": "inline.pue-purescript",
+        "path": "./syntaxes/pue-injection.json",
+        "injectTo": ["source.vue"],
+        "embeddedLanguages": {
+          "meta.embedded.block.purescript": "purescript"
+        }
+      }
+    ]
+  }
+}

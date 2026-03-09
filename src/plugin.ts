@@ -7,11 +7,18 @@ export interface PueOptions {
   outputDir?: string
 }
 
-// Match <script setup lang="purs"> in any attribute order
-const PURS_SCRIPT_RE =
-  /<script\s+(?=[^>]*\blang=["']purs["'])(?=[^>]*\bsetup\b)[^>]*>([\s\S]*?)<\/script>/
+// Match any <script> with lang="purs" (with or without setup)
+const PURS_LANG_RE =
+  /<script\b(?=[^>]*\blang=["']purs["'])[^>]*>([\s\S]*?)<\/script>/
 
 const MODULE_NAME_RE = /^\s*module\s+([\w.]+)/m
+
+interface ExtractResult {
+  moduleName: string
+  code: string
+  fullMatch: string
+  isSetup: boolean
+}
 
 export function pue(options: PueOptions = {}): Plugin {
   const outputDir = options.outputDir ?? 'output'
@@ -19,19 +26,18 @@ export function pue(options: PueOptions = {}): Plugin {
   let server: ViteDevServer | undefined
   const moduleMap = new Map<string, string>()
 
-  function extract(sfcContent: string) {
-    const match = PURS_SCRIPT_RE.exec(sfcContent)
+  function extract(sfcContent: string): ExtractResult | null {
+    const match = PURS_LANG_RE.exec(sfcContent)
     if (!match) return null
+
+    const tag = match[0].slice(0, match[0].indexOf('>'))
+    const isSetup = /\bsetup\b/.test(tag)
 
     const code = match[1]
     const modMatch = MODULE_NAME_RE.exec(code)
     if (!modMatch) return null
 
-    return {
-      moduleName: modMatch[1],
-      code,
-      fullMatch: match[0],
-    }
+    return { moduleName: modMatch[1], code, fullMatch: match[0], isSetup }
   }
 
   function writePursFile(moduleName: string, code: string): string {
@@ -138,7 +144,6 @@ export function pue(options: PueOptions = {}): Plugin {
     const inlineRe = /setup\s*::[\s\S]*?\{/
     const inlineMatch = inlineRe.exec(pursSource)
     if (inlineMatch) {
-      // Verify this is a type annotation (contains ::) not a record literal
       const before = pursSource.slice(0, inlineMatch.index + inlineMatch[0].length)
       if (before.includes('::')) {
         return fieldsFromBraces(pursSource, inlineMatch.index + inlineMatch[0].length)
@@ -181,18 +186,13 @@ export function pue(options: PueOptions = {}): Plugin {
 
   // --- SFC transform ---
 
-  function transformSFC(code: string): string | null {
-    const result = extract(code)
-    if (!result) return null
-
-    const { moduleName, code: pursCode, fullMatch } = result
-    const exports = getExports(moduleName)
-
-    if (exports.length === 0) {
-      return code.replace(fullMatch, '<script setup>\n/* pue: no exports */\n</script>')
-    }
-
-    const compiledPath = path.join(root, outputDir, moduleName, 'index.js')
+  function transformSetupSFC(
+    pursCode: string,
+    fullMatch: string,
+    sfcContent: string,
+    compiledPath: string,
+    exports: string[],
+  ): string {
     const hasSetup = exports.includes('setup')
     const lines: string[] = []
 
@@ -208,17 +208,68 @@ export function pue(options: PueOptions = {}): Plugin {
         }
         lines.push(`const { ${fields.join(', ')} } = __pue_setup()`)
       } else {
-        // Fallback: can't determine fields, import setup raw
         lines.push(`import { setup as __pue_setup } from '${compiledPath}'`)
         lines.push(`const __pue_bindings = __pue_setup()`)
       }
     } else {
-      // No setup: import all exports directly
       lines.push(`import { ${exports.join(', ')} } from '${compiledPath}'`)
     }
 
-    const newScript = `<script setup>\n${lines.join('\n')}\n</script>`
-    return code.replace(fullMatch, newScript)
+    return sfcContent.replace(fullMatch, `<script setup>\n${lines.join('\n')}\n</script>`)
+  }
+
+  function transformOptionsSFC(
+    pursCode: string,
+    fullMatch: string,
+    sfcContent: string,
+    compiledPath: string,
+    exports: string[],
+  ): string {
+    const hasSetup = exports.includes('setup')
+    const hasComponent = exports.includes('component')
+    const lines: string[] = []
+
+    if (hasSetup) {
+      // Composition API via setup() in Options object
+      const fields = extractRecordFields(pursCode)
+      const pureExports = exports.filter(e => e !== 'setup')
+
+      lines.push(`import { setup as __pue_setup${pureExports.length > 0 ? ', ' + pureExports.join(', ') : ''} } from '${compiledPath}'`)
+
+      if (fields && fields.length > 0) {
+        lines.push(`export default { setup() { return __pue_setup() } }`)
+      } else {
+        lines.push(`export default { setup: __pue_setup }`)
+      }
+    } else if (hasComponent) {
+      // Direct component options export
+      lines.push(`export { component as default } from '${compiledPath}'`)
+    } else {
+      // Re-export all as a component
+      lines.push(`import * as __pue from '${compiledPath}'`)
+      lines.push(`export default __pue`)
+    }
+
+    return sfcContent.replace(fullMatch, `<script>\n${lines.join('\n')}\n</script>`)
+  }
+
+  function transformSFC(code: string): string | null {
+    const result = extract(code)
+    if (!result) return null
+
+    const { moduleName, code: pursCode, fullMatch, isSetup } = result
+    const exports = getExports(moduleName)
+
+    if (exports.length === 0) {
+      const tag = isSetup ? '<script setup>' : '<script>'
+      return code.replace(fullMatch, `${tag}\n/* pue: no exports */\n</script>`)
+    }
+
+    const compiledPath = path.join(root, outputDir, moduleName, 'index.js')
+
+    return isSetup
+      ? transformSetupSFC(pursCode, fullMatch, code, compiledPath, exports)
+      : transformOptionsSFC(pursCode, fullMatch, code, compiledPath, exports)
   }
 
   // --- File scanning ---
@@ -256,7 +307,7 @@ export function pue(options: PueOptions = {}): Plugin {
               setup(build) {
                 build.onLoad({ filter: /\.vue$/ }, async (args) => {
                   const content = await fs.promises.readFile(args.path, 'utf-8')
-                  if (!PURS_SCRIPT_RE.test(content)) return undefined
+                  if (!PURS_LANG_RE.test(content)) return undefined
                   return { contents: 'export default {}', loader: 'js' }
                 })
               },
