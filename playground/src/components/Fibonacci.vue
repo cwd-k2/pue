@@ -7,7 +7,7 @@
   </div>
 </template>
 
-<script setup lang="purs">
+<script lang="purs">
 module Pue.Fibonacci where
 
 import Prelude

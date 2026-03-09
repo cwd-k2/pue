@@ -10,7 +10,7 @@ Write PureScript in Vue Single File Components.
   </div>
 </template>
 
-<script setup lang="purs">
+<script lang="purs">
 module App.Counter where
 
 import Prelude
@@ -53,7 +53,7 @@ The plugin automatically adds `.pue/**/*.purs` and pue library sources to your s
 
 ## How it works
 
-1. The Vite plugin detects `<script lang="purs">` or `<script setup lang="purs">` blocks
+1. The Vite plugin detects `<script lang="purs">` blocks
 2. PureScript code is extracted to `.pue/` and compiled via `spago build`
 3. The `<script>` block is rewritten to import the compiled JavaScript
 4. Vue's template bindings work through the `setup` convention
@@ -111,15 +111,9 @@ model = defineModel
 
 See [docs/api.md](docs/api.md) for full reference.
 
-## Both APIs
+## Usage
 
-**Composition API** — `<script setup lang="purs">`
-
-Fields from `setup` are destructured directly into the template scope.
-
-**Options API** — `<script lang="purs">`
-
-The module is wrapped as a Vue component options object with a `setup()` method.
+`<script lang="purs">` — The module is wrapped as a Vue component options object with a `setup()` method. Modules without `setup` export all bindings directly through a generated `setup()` wrapper.
 
 ## Editor support
 

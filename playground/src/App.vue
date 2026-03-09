@@ -23,11 +23,14 @@
     <div class="grid">
       <WatchDemo />
       <WatchEffectDemo />
+      <WatchPostDemo />
     </div>
 
     <h3>Lifecycle Hooks</h3>
     <div class="grid">
+      <MountedDemo />
       <Lifecycle />
+      <KeepAliveDemo />
     </div>
 
     <h3>Provide / Inject</h3>
@@ -56,10 +59,16 @@
       <SlotDemo />
     </div>
 
-    <h3>Template Ref &amp; useId</h3>
+    <h3>Ref Variants</h3>
     <div class="grid">
       <TemplateRefDemo />
+      <CustomRefDemo />
       <IdDemo />
+    </div>
+
+    <h3>EffectScope</h3>
+    <div class="grid">
+      <ScopeDemo />
     </div>
 
     <h3>Error Handling</h3>
@@ -87,7 +96,10 @@ import Collatz from './components/Collatz.vue'
 import GCD from './components/GCD.vue'
 import WatchDemo from './components/WatchDemo.vue'
 import WatchEffectDemo from './components/WatchEffectDemo.vue'
+import WatchPostDemo from './components/WatchPostDemo.vue'
+import MountedDemo from './components/MountedDemo.vue'
 import Lifecycle from './components/Lifecycle.vue'
+import KeepAliveDemo from './components/KeepAliveDemo.vue'
 import ProvideInject from './components/ProvideInject.vue'
 import PropsDemo from './components/PropsDemo.vue'
 import ModelDemo from './components/ModelDemo.vue'
@@ -95,7 +107,9 @@ import MultiModelDemo from './components/MultiModelDemo.vue'
 import ExposeDemo from './components/ExposeDemo.vue'
 import SlotDemo from './components/SlotDemo.vue'
 import TemplateRefDemo from './components/TemplateRefDemo.vue'
+import CustomRefDemo from './components/CustomRefDemo.vue'
 import IdDemo from './components/IdDemo.vue'
+import ScopeDemo from './components/ScopeDemo.vue'
 import ErrorDemo from './components/ErrorDemo.vue'
 import Greeting from './components/Greeting.vue'
 import OptionsDemo from './components/OptionsDemo.vue'
@@ -104,8 +118,10 @@ import OptionsAttrDemo from './components/OptionsAttrDemo.vue'
 const components = [
   'Counter', 'DoubleCounter', 'Fibonacci', 'Toggle', 'Stepper',
   'Temperature', 'Collatz', 'GCD', 'WatchDemo', 'WatchEffectDemo',
-  'Lifecycle', 'ProvideInject', 'PropsDemo', 'ModelDemo', 'MultiModelDemo',
-  'ExposeDemo', 'SlotDemo', 'TemplateRefDemo', 'IdDemo', 'ErrorDemo',
+  'WatchPostDemo', 'MountedDemo', 'Lifecycle', 'KeepAliveDemo',
+  'ProvideInject', 'PropsDemo', 'ModelDemo', 'MultiModelDemo',
+  'ExposeDemo', 'SlotDemo', 'TemplateRefDemo', 'CustomRefDemo',
+  'IdDemo', 'ScopeDemo', 'ErrorDemo',
   'Greeting', 'OptionsDemo', 'OptionsAttrDemo',
 ]
 </script>

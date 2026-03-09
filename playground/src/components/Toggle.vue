@@ -6,7 +6,7 @@
   </div>
 </template>
 
-<script setup lang="purs">
+<script lang="purs">
 module Pue.Toggle where
 
 import Prelude

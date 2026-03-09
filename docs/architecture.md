@@ -9,7 +9,7 @@
   │
   ├─ spago build ──→ output/<Module.Name>/index.js
   │
-  └─ transform ──→ <script setup> with JS imports
+  └─ transform ──→ <script> with JS imports
         │
         └─ @vitejs/plugin-vue takes over
 ```
@@ -28,10 +28,10 @@ pue runs as a Vite plugin with `enforce: 'pre'`, executing before `@vitejs/plugi
 
 Called by Vite for each `.vue` file. For files with PureScript blocks:
 
-1. **`extract()`** — Finds the `<script lang="purs">` tag, determines if it's `setup` or options style.
+1. **`extract()`** — Finds the `<script lang="purs">` tag and extracts the PureScript code.
 2. **`getExports()`** — Reads the compiled `output/<Module>/index.js` to discover exported symbols.
 3. **`extractRecordFields()`** — Parses the PureScript source for the `setup` function's return type to identify record fields.
-4. **`transformSetupSFC()` / `transformOptionsSFC()`** — Rewrites the `<script>` block with appropriate JS imports and destructuring.
+4. **`transformOptionsSFC()`** — Rewrites the `<script>` block as a Vue component options object with JS imports.
 
 ### `handleHotUpdate`
 
@@ -62,24 +62,22 @@ project/
 
 ## Transform examples
 
-### Composition API (`<script setup lang="purs">`)
+### With `setup` function
 
 Given a PureScript module exporting `setup :: Effect { count :: Ref Int, increment :: Effect Unit }`, the transform produces:
 
 ```js
 import { setup as __pue_setup } from '/abs/path/output/Module.Name/index.js'
-const { count, increment } = __pue_setup()
+export default { setup() { return __pue_setup() } }
 ```
 
-If the module also has top-level exports (not in the setup record), they're imported as named imports alongside.
+### Pure exports (no `setup`)
 
-### Options API (`<script lang="purs">`)
-
-Wrapped as a component options object:
+Modules without a `setup` function have their exports wrapped in a generated `setup()`:
 
 ```js
-import { setup as __pue_setup } from '/abs/path/output/Module.Name/index.js'
-export default { setup() { return __pue_setup() } }
+import { message } from '/abs/path/output/Module.Name/index.js'
+export default { setup() { return { message } } }
 ```
 
 ## Why `Effect` aligns with Vue

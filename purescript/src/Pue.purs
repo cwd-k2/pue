@@ -6,7 +6,7 @@ module Pue
   , readRef
   , writeRef, modifyRef, triggerRef
   -- Layer 2: Subscriptions
-  , watch, watchEffect, watchPostEffect, watchSyncEffect
+  , watch, watchImmediate, watchEffect, watchPostEffect, watchSyncEffect
   , onBeforeMount, onMounted, onBeforeUpdate, onUpdated, onBeforeUnmount, onUnmounted
   , onActivated, onDeactivated
   , onErrorCaptured
@@ -101,11 +101,12 @@ foreign import triggerRef :: forall a. Ref a -> Effect Unit
 -- Callback registration for reactive, lifecycle, temporal, and scope events.
 -- Common pattern: register an effect to be executed at a specific point.
 
--- | Reactive observation
-foreign import watch :: forall a. Ref a -> (a -> a -> Effect Unit) -> Effect Unit
-foreign import watchEffect :: Effect Unit -> Effect Unit
-foreign import watchPostEffect :: Effect Unit -> Effect Unit
-foreign import watchSyncEffect :: Effect Unit -> Effect Unit
+-- | Reactive observation — all return a stop handle
+foreign import watch :: forall a. Ref a -> (a -> a -> Effect Unit) -> Effect (Effect Unit)
+foreign import watchImmediate :: forall a. Ref a -> (a -> a -> Effect Unit) -> Effect (Effect Unit)
+foreign import watchEffect :: Effect Unit -> Effect (Effect Unit)
+foreign import watchPostEffect :: Effect Unit -> Effect (Effect Unit)
+foreign import watchSyncEffect :: Effect Unit -> Effect (Effect Unit)
 
 -- | Lifecycle: component state machine transitions
 foreign import onBeforeMount :: Effect Unit -> Effect Unit

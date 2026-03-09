@@ -2,7 +2,7 @@
   <p>Injected theme: <strong>{{ theme }}</strong></p>
 </template>
 
-<script setup lang="purs">
+<script lang="purs">
 module Pue.InjectedChild where
 
 import Prelude

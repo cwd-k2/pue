@@ -164,34 +164,45 @@ triggerRef myShallowRef
 
 ## Layer 2: Subscriptions
 
-Callback registration for events. All functions take a callback and register it to be executed at a specific point. Common pattern: `handler -> Effect Unit`.
+Callback registration for events. Reactive observation functions return a stop handle (`Effect (Effect Unit)`). Lifecycle and temporal hooks return `Effect Unit`.
 
 ### Reactive Observation
 
-#### `watch :: forall a. Ref a -> (a -> a -> Effect Unit) -> Effect Unit`
+All watch functions return a **stop handle** — call it to unregister the watcher.
+
+#### `watch :: forall a. Ref a -> (a -> a -> Effect Unit) -> Effect (Effect Unit)`
 
 Watch a ref and run a callback on change.
 
 ```purescript
-watch count \newVal oldVal ->
+_ <- watch count \newVal oldVal ->
   modifyRef (\xs -> xs <> [show oldVal <> " → " <> show newVal]) history
 ```
 
-#### `watchEffect :: Effect Unit -> Effect Unit`
+#### `watchImmediate :: forall a. Ref a -> (a -> a -> Effect Unit) -> Effect (Effect Unit)`
+
+Like `watch`, but fires the callback immediately with the current value.
+
+```purescript
+stop <- watchImmediate count \newVal _oldVal ->
+  writeRef (show newVal) display
+```
+
+#### `watchEffect :: Effect Unit -> Effect (Effect Unit)`
 
 Run an effect that auto-tracks reactive dependencies and re-runs on change.
 
 ```purescript
-watchEffect do
+stop <- watchEffect do
   c <- readRef count
   writeRef (if mod c 2 == 0 then "even" else "odd") parity
 ```
 
-#### `watchPostEffect :: Effect Unit -> Effect Unit`
+#### `watchPostEffect :: Effect Unit -> Effect (Effect Unit)`
 
 Like `watchEffect`, but deferred until after DOM updates. Use when the effect needs to read updated DOM state.
 
-#### `watchSyncEffect :: Effect Unit -> Effect Unit`
+#### `watchSyncEffect :: Effect Unit -> Effect (Effect Unit)`
 
 Like `watchEffect`, but runs synchronously on every reactive change. Use sparingly — typically for debuggers or low-level state synchronization.
 

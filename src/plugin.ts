@@ -7,7 +7,6 @@ export interface PueOptions {
   outputDir?: string
 }
 
-// Match any <script> with lang="purs" (with or without setup)
 const PURS_LANG_RE =
   /<script\b(?=[^>]*\blang=["']purs["'])[^>]*>([\s\S]*?)<\/script>/
 
@@ -17,7 +16,6 @@ interface ExtractResult {
   moduleName: string
   code: string
   fullMatch: string
-  isSetup: boolean
 }
 
 export function pue(options: PueOptions = {}): Plugin {
@@ -30,14 +28,11 @@ export function pue(options: PueOptions = {}): Plugin {
     const match = PURS_LANG_RE.exec(sfcContent)
     if (!match) return null
 
-    const tag = match[0].slice(0, match[0].indexOf('>'))
-    const isSetup = /\bsetup\b/.test(tag)
-
     const code = match[1]
     const modMatch = MODULE_NAME_RE.exec(code)
     if (!modMatch) return null
 
-    return { moduleName: modMatch[1], code, fullMatch: match[0], isSetup }
+    return { moduleName: modMatch[1], code, fullMatch: match[0] }
   }
 
   function writePursFile(moduleName: string, code: string): string {
@@ -224,7 +219,11 @@ export function pue(options: PueOptions = {}): Plugin {
   }
 
   function pursTypeToVue(type: string): string | null {
-    switch (type) {
+    const t = type.trim()
+    if (t.startsWith('Array')) return 'Array'
+    if (t.startsWith('{')) return 'Object'
+    if (t.startsWith('Effect')) return 'Function'
+    switch (t) {
       case 'String': return 'String'
       case 'Int': case 'Number': return 'Number'
       case 'Boolean': return 'Boolean'
@@ -272,55 +271,6 @@ export function pue(options: PueOptions = {}): Plugin {
   }
 
   // --- SFC transform ---
-
-  function transformSetupSFC(
-    pursCode: string,
-    fullMatch: string,
-    sfcContent: string,
-    compiledPath: string,
-    exports: string[],
-  ): string {
-    const hasSetup = exports.includes('setup')
-    const lines: string[] = []
-    const components = extractStringArray(pursCode, 'components')
-    const exposeMap = extractDefineRecord(pursCode, 'expose')
-    const optionsRecord = extractOptionsRecord(pursCode)
-
-    if (components) {
-      for (const c of components) lines.push(`import ${c} from './${c}.vue'`)
-    }
-
-    if (hasSetup) {
-      const fields = extractRecordFields(pursCode)
-      const fieldSet = new Set(fields ?? [])
-      const metaExports = new Set(['setup', 'components', 'expose', 'options', 'slots', 'defaults'])
-      const pureExports = exports.filter(e => !metaExports.has(e) && !fieldSet.has(e))
-
-      if (fields && fields.length > 0) {
-        if (pureExports.length > 0) {
-          lines.push(`import { setup as __pue_setup, ${pureExports.join(', ')} } from '${compiledPath}'`)
-        } else {
-          lines.push(`import { setup as __pue_setup } from '${compiledPath}'`)
-        }
-        lines.push(`const { ${fields.join(', ')} } = __pue_setup()`)
-      } else {
-        lines.push(`import { setup as __pue_setup } from '${compiledPath}'`)
-        lines.push(`const __pue_bindings = __pue_setup()`)
-      }
-    } else {
-      const metaExports = new Set(['components', 'expose', 'options', 'slots'])
-      lines.push(`import { ${exports.filter(e => !metaExports.has(e)).join(', ')} } from '${compiledPath}'`)
-    }
-
-    if (exposeMap) {
-      lines.push(`defineExpose({ ${Object.keys(exposeMap).join(', ')} })`)
-    }
-    if (optionsRecord) {
-      lines.push(`defineOptions({ ${optionsRecord} })`)
-    }
-
-    return sfcContent.replace(fullMatch, `<script setup>\n${lines.join('\n')}\n</script>`)
-  }
 
   function transformOptionsSFC(
     pursCode: string,
@@ -407,8 +357,14 @@ export function pue(options: PueOptions = {}): Plugin {
     } else if (hasComponent) {
       lines.push(`export { component as default } from '${compiledPath}'`)
     } else {
-      lines.push(`import * as __pue from '${compiledPath}'`)
-      lines.push(`export default __pue`)
+      const metaExports = new Set(['components', 'expose', 'options', 'slots', 'defaults'])
+      const pureExports = exports.filter(e => !metaExports.has(e))
+      if (pureExports.length > 0) {
+        lines.push(`import { ${pureExports.join(', ')} } from '${compiledPath}'`)
+        lines.push(`export default { setup() { return { ${pureExports.join(', ')} } } }`)
+      } else {
+        lines.push(`export default {}`)
+      }
     }
 
     return sfcContent.replace(fullMatch, `<script>\n${lines.join('\n')}\n</script>`)
@@ -418,19 +374,15 @@ export function pue(options: PueOptions = {}): Plugin {
     const result = extract(code)
     if (!result) return null
 
-    const { moduleName, code: pursCode, fullMatch, isSetup } = result
+    const { moduleName, code: pursCode, fullMatch } = result
     const exports = getExports(moduleName)
 
     if (exports.length === 0) {
-      const tag = isSetup ? '<script setup>' : '<script>'
-      return code.replace(fullMatch, `${tag}\n/* pue: no exports */\n</script>`)
+      return code.replace(fullMatch, `<script>\n/* pue: no exports */\n</script>`)
     }
 
     const compiledPath = path.join(root, outputDir, moduleName, 'index.js')
-
-    return isSetup
-      ? transformSetupSFC(pursCode, fullMatch, code, compiledPath, exports)
-      : transformOptionsSFC(pursCode, fullMatch, code, compiledPath, exports)
+    return transformOptionsSFC(pursCode, fullMatch, code, compiledPath, exports)
   }
 
   // --- File scanning ---

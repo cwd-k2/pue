@@ -7,7 +7,7 @@
   </div>
 </template>
 
-<script setup lang="purs">
+<script lang="purs">
 module Pue.WatchEffectDemo where
 
 import Prelude
@@ -17,7 +17,7 @@ import Pue (Ref, ref, readRef, writeRef, modifyRef, watchEffect)
 setup = do
   count <- ref 0
   parity <- ref "even"
-  watchEffect do
+  _ <- watchEffect do
     c <- readRef count
     writeRef (if mod c 2 == 0 then "even" else "odd") parity
   let increment = modifyRef (_ + 1) count

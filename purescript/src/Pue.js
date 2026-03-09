@@ -33,10 +33,11 @@ export const triggerRef = (r) => () => Vue.triggerRef(r);
 
 // Layer 2: Subscriptions — Reactive, Lifecycle, Temporal, Scope
 
-// Reactive
-export const watch = (source) => (callback) => () => {
+// Reactive — all return a stop handle
+export const watch = (source) => (callback) => () =>
   Vue.watch(source, (newVal, oldVal) => { callback(newVal)(oldVal)(); });
-};
+export const watchImmediate = (source) => (callback) => () =>
+  Vue.watch(source, (newVal, oldVal) => { callback(newVal)(oldVal)(); }, { immediate: true });
 export const watchEffect = (effect) => () => Vue.watchEffect(effect);
 export const watchPostEffect = (effect) => () => Vue.watchPostEffect(effect);
 export const watchSyncEffect = (effect) => () => Vue.watchSyncEffect(effect);

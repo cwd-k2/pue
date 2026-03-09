@@ -8,7 +8,7 @@
   </div>
 </template>
 
-<script setup lang="purs">
+<script lang="purs">
 module Pue.DoubleCounter where
 
 import Prelude

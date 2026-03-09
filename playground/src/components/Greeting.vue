@@ -5,7 +5,7 @@
   </div>
 </template>
 
-<script setup lang="purs">
+<script lang="purs">
 module Pue.Greeting where
 
 message :: String
