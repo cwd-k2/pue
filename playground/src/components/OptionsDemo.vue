@@ -13,7 +13,6 @@ import Prelude
 import Effect (Effect)
 import Pue (Ref, ref, modifyRef)
 
-setup :: Effect { count :: Ref Int, increment :: Effect Unit }
 setup = do
   count <- ref 0
   let increment = modifyRef (_ + 1) count

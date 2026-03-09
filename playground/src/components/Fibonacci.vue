@@ -1,6 +1,6 @@
 <template>
   <div class="card">
-    <h2>Fibonacci (DSL)</h2>
+    <h2>Fibonacci</h2>
     <p>n={{ n }} → fib={{ fibVal }}</p>
     <button @click="next">next</button>
     <button @click="reset">reset</button>
@@ -20,10 +20,12 @@ fib n = go n 0 1
   go 0 a _ = a
   go k a b = go (k - 1) b (a + b)
 
-n <- ref 0
-fibVal <- computed do
-  v <- readRef n
-  pure (fib v)
-next = modifyRef (_ + 1) n
-reset = writeRef 0 n
+setup = do
+  n <- ref 0
+  fibVal <- computed do
+    v <- readRef n
+    pure (fib v)
+  let next = modifyRef (_ + 1) n
+  let reset = writeRef 0 n
+  pure { n, fibVal, next, reset }
 </script>

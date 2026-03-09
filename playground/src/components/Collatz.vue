@@ -1,6 +1,6 @@
 <template>
   <div class="card">
-    <h2>Collatz (DSL)</h2>
+    <h2>Collatz</h2>
     <p>current: {{ current }} (steps: {{ steps }})</p>
     <button @click="step">step</button>
     <button @click="reset">reset to 27</button>
@@ -20,14 +20,16 @@ collatzStep n
   | mod n 2 == 0 = n / 2
   | otherwise = 3 * n + 1
 
-current <- ref 27
-steps <- ref 0
-step = do
-  c <- readRef current
-  when (c > 1) do
-    writeRef (collatzStep c) current
-    modifyRef (_ + 1) steps
-reset = do
-  writeRef 27 current
-  writeRef 0 steps
+setup = do
+  current <- ref 27
+  steps <- ref 0
+  let step = do
+        c <- readRef current
+        when (c > 1) do
+          writeRef (collatzStep c) current
+          modifyRef (_ + 1) steps
+  let reset = do
+        writeRef 27 current
+        writeRef 0 steps
+  pure { current, steps, step, reset }
 </script>
