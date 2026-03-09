@@ -25,6 +25,7 @@ export function pue(options: PueOptions = {}): Plugin {
   let root: string
   let server: ViteDevServer | undefined
   const moduleMap = new Map<string, string>()
+  const dslFields = new Map<string, string[]>()
 
   function extract(sfcContent: string): ExtractResult | null {
     const match = PURS_LANG_RE.exec(sfcContent)
@@ -184,6 +185,124 @@ export function pue(options: PueOptions = {}): Plugin {
     return fields
   }
 
+  // --- Setup DSL transformation ---
+
+  interface DSLBlock {
+    firstLine: string
+    lines: string[]
+  }
+
+  function splitTopLevelBlocks(code: string): DSLBlock[] {
+    const lines = code.split('\n')
+    const blocks: DSLBlock[] = []
+    let current: string[] = []
+
+    for (const line of lines) {
+      if (line.length > 0 && !/^\s/.test(line) && current.some(l => l.trim().length > 0)) {
+        const firstLine = current.find(l => l.trim())?.trim() ?? ''
+        blocks.push({ firstLine, lines: current })
+        current = [line]
+      } else {
+        current.push(line)
+      }
+    }
+
+    if (current.some(l => l.trim().length > 0)) {
+      blocks.push({ firstLine: current.find(l => l.trim())?.trim() ?? '', lines: current })
+    }
+
+    return blocks
+  }
+
+  interface SetupPart {
+    kind: 'bind' | 'let'
+    name: string
+    lines: string[]
+  }
+
+  function transformSetupDSL(code: string): { transformed: string; fields: string[] } | null {
+    if (/^setup\s*=/m.test(code)) return null
+
+    const blocks = splitTopLevelBlocks(code)
+
+    const preamble: string[] = []
+    const setupParts: SetupPart[] = []
+    let pendingAnn: { name: string; lines: string[] } | null = null
+
+    const DECL_RE = /^(module|import|type|data|newtype|class|instance|derive|foreign|infixl|infixr|infix)\s/
+
+    for (const block of blocks) {
+      const f = block.firstLine
+
+      if (DECL_RE.test(f)) {
+        if (pendingAnn) { preamble.push(...pendingAnn.lines); pendingAnn = null }
+        preamble.push(...block.lines)
+        continue
+      }
+
+      const annMatch = f.match(/^(\w+)\s*::/)
+      if (annMatch) {
+        if (pendingAnn) preamble.push(...pendingAnn.lines)
+        pendingAnn = { name: annMatch[1], lines: block.lines }
+        continue
+      }
+
+      if (f.match(/^(\w+)\s*<-/)) {
+        pendingAnn = null
+        const name = f.match(/^(\w+)/)![1]
+        setupParts.push({ kind: 'bind', name, lines: block.lines })
+        continue
+      }
+
+      const valMatch = f.match(/^(\w+)\s*=/)
+      if (valMatch) {
+        pendingAnn = null
+        setupParts.push({ kind: 'let', name: valMatch[1], lines: block.lines })
+        continue
+      }
+
+      // Function with args or other top-level decl
+      if (pendingAnn) { preamble.push(...pendingAnn.lines); pendingAnn = null }
+      preamble.push(...block.lines)
+    }
+
+    if (pendingAnn) preamble.push(...pendingAnn.lines)
+
+    // Only transform if there are monadic binds (<-)
+    // Pure modules with only = bindings stay as-is
+    if (!setupParts.some(p => p.kind === 'bind')) return null
+
+    const output = [...preamble, '', 'setup = do']
+
+    for (const part of setupParts) {
+      const nonEmpty = part.lines.filter(l => l.trim().length > 0)
+      if (part.kind === 'bind') {
+        for (const line of nonEmpty) {
+          output.push('  ' + line)
+        }
+      } else {
+        for (let i = 0; i < nonEmpty.length; i++) {
+          output.push(i === 0 ? '  let ' + nonEmpty[i] : '      ' + nonEmpty[i])
+        }
+      }
+    }
+
+    const fields = setupParts.map(p => p.name)
+    output.push(`  pure { ${fields.join(', ')} }`)
+
+    return { transformed: output.join('\n') + '\n', fields }
+  }
+
+  function applyDSL(moduleName: string, code: string, isSetup: boolean): string {
+    if (!isSetup) return code
+
+    const result = transformSetupDSL(code)
+    if (!result) return code
+
+    dslFields.set(moduleName, result.fields)
+    return result.transformed
+  }
+
   // --- SFC transform ---
 
   function transformSetupSFC(
@@ -192,12 +311,13 @@ export function pue(options: PueOptions = {}): Plugin {
     sfcContent: string,
     compiledPath: string,
     exports: string[],
+    moduleName: string,
   ): string {
     const hasSetup = exports.includes('setup')
     const lines: string[] = []
 
     if (hasSetup) {
-      const fields = extractRecordFields(pursCode)
+      const fields = dslFields.get(moduleName) ?? extractRecordFields(pursCode)
       const fieldSet = new Set(fields ?? [])
       const pureExports = exports.filter(e => e !== 'setup' && !fieldSet.has(e))
 
@@ -269,7 +389,7 @@ export function pue(options: PueOptions = {}): Plugin {
     const compiledPath = path.join(root, outputDir, moduleName, 'index.js')
 
     return isSetup
-      ? transformSetupSFC(pursCode, fullMatch, code, compiledPath, exports)
+      ? transformSetupSFC(pursCode, fullMatch, code, compiledPath, exports, moduleName)
       : transformOptionsSFC(pursCode, fullMatch, code, compiledPath, exports)
   }
 
@@ -284,7 +404,8 @@ export function pue(options: PueOptions = {}): Plugin {
       const content = fs.readFileSync(file, 'utf-8')
       const result = extract(content)
       if (result) {
-        writePursFile(result.moduleName, result.code)
+        const code = applyDSL(result.moduleName, result.code, result.isSetup)
+        writePursFile(result.moduleName, code)
         moduleMap.set(result.moduleName, file)
         found = true
       }
@@ -347,7 +468,8 @@ export function pue(options: PueOptions = {}): Plugin {
       const result = extract(content)
       if (!result) return
 
-      writePursFile(result.moduleName, result.code)
+      const code = applyDSL(result.moduleName, result.code, result.isSetup)
+      writePursFile(result.moduleName, code)
       moduleMap.set(result.moduleName, file)
 
       try {

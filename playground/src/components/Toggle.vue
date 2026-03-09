@@ -1,6 +1,6 @@
 <template>
   <div class="card">
-    <h2>Toggle</h2>
+    <h2>Toggle (DSL)</h2>
     <p>{{ label }}</p>
     <button @click="toggle">toggle</button>
   </div>
@@ -13,14 +13,11 @@ import Prelude
 import Effect (Effect)
 import Pue (Ref, ref, readRef, writeRef, computed)
 
-setup :: Effect { label :: Ref String, toggle :: Effect Unit }
-setup = do
-  on <- ref true
-  label <- computed do
-    v <- readRef on
-    pure (if v then "ON" else "OFF")
-  let toggle = do
-        v <- readRef on
-        writeRef (not v) on
-  pure { label, toggle }
+on <- ref true
+label <- computed do
+  v <- readRef on
+  pure (if v then "ON" else "OFF")
+toggle = do
+  v <- readRef on
+  writeRef (not v) on
 </script>

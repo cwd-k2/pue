@@ -1,6 +1,6 @@
 <template>
   <div class="card">
-    <h2>Stepper (step={{ step }})</h2>
+    <h2>Stepper (DSL, step={{ step }})</h2>
     <p>{{ value }}</p>
     <button @click="up">+{{ step }}</button>
     <button @click="down">-{{ step }}</button>
@@ -15,16 +15,13 @@ import Prelude
 import Effect (Effect)
 import Pue (Ref, ref, readRef, modifyRef)
 
-setup :: Effect { value :: Ref Int, step :: Ref Int, up :: Effect Unit, down :: Effect Unit, changeStep :: Effect Unit }
-setup = do
-  value <- ref 0
-  step <- ref 1
-  let up = do
-        s <- readRef step
-        modifyRef (_ + s) value
-  let down = do
-        s <- readRef step
-        modifyRef (_ - s) value
-  let changeStep = modifyRef (_ * 2) step
-  pure { value, step, up, down, changeStep }
+value <- ref 0
+step <- ref 1
+up = do
+  s <- readRef step
+  modifyRef (_ + s) value
+down = do
+  s <- readRef step
+  modifyRef (_ - s) value
+changeStep = modifyRef (_ * 2) step
 </script>
