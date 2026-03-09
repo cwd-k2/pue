@@ -8,22 +8,56 @@ const PURS_LANG_RE =
 const MODULE_NAME_RE = /^\s*module\s+([\w.]+)/m
 
 /**
- * Derive a PureScript module name from a .vue file path.
- * `src/components/Counter.vue` → `Pue.Counter`
+ * Capitalise the first letter, convert kebab/snake segments to PascalCase.
+ * `components` → `Components`, `my-form` → `MyForm`
  */
-export function moduleNameFromPath(filePath: string, prefix: string): string {
-  const basename = path.basename(filePath, '.vue')
-  return `${prefix}.${basename}`
+function toPascalCase(s: string): string {
+  return s
+    .split(/[-_]/)
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join('')
+}
+
+/**
+ * Derive a PureScript module name from a .vue file path.
+ *
+ * Computes the relative path from the closest srcDir, PascalCases each
+ * segment, and prefixes with the module prefix.
+ *
+ * `src/components/Counter.vue` → `App.Components.Counter`
+ */
+export function moduleNameFromPath(
+  filePath: string,
+  root: string,
+  srcDirs: string[],
+  prefix: string,
+): string {
+  const absPath = path.resolve(filePath)
+
+  for (const srcDir of srcDirs) {
+    const absSrcDir = path.resolve(root, srcDir)
+    if (absPath.startsWith(absSrcDir + path.sep)) {
+      const relative = path.relative(absSrcDir, absPath)
+      const withoutExt = relative.replace(/\.vue$/, '')
+      const parts = withoutExt.split(path.sep).map(toPascalCase)
+      return [prefix, ...parts].join('.')
+    }
+  }
+
+  // Fallback: relative to root
+  const relative = path.relative(root, absPath)
+  const withoutExt = relative.replace(/\.vue$/, '')
+  const parts = withoutExt.split(path.sep).map(toPascalCase)
+  return [prefix, ...parts].join('.')
 }
 
 /**
  * Extract PureScript code from a Vue SFC.
- * If no `module` declaration is present, one is generated from the file path.
+ * If no `module` declaration is present, the caller-supplied fallback name is used.
  */
 export function extract(
   sfcContent: string,
-  filePath?: string,
-  modulePrefix: string = 'Pue',
+  fallbackModuleName?: string,
 ): ExtractResult | null {
   const match = PURS_LANG_RE.exec(sfcContent)
   if (!match) return null
@@ -37,8 +71,8 @@ export function extract(
   if (modMatch) {
     moduleName = modMatch[1]
     code = raw
-  } else if (filePath) {
-    moduleName = moduleNameFromPath(filePath, modulePrefix)
+  } else if (fallbackModuleName) {
+    moduleName = fallbackModuleName
     code = `module ${moduleName} where\n${raw}`
   } else {
     return null
@@ -99,7 +133,8 @@ export function scanAndExtract(
 
   for (const file of vueFiles) {
     const content = fs.readFileSync(file, 'utf-8')
-    const result = extract(content, file, modulePrefix)
+    const modName = moduleNameFromPath(file, root, srcDirs, modulePrefix)
+    const result = extract(content, modName)
     if (result) {
       writePursFile(root, result.moduleName, result.code)
       moduleMap.set(result.moduleName, file)

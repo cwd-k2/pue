@@ -2,7 +2,7 @@ import type { Plugin, ViteDevServer } from 'vite'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import type { PueOptions } from './types'
-import { extract, writePursFile, scanAndExtract } from './extract'
+import { extract, moduleNameFromPath, writePursFile, scanAndExtract } from './extract'
 import { compileSync, compileAsync } from './compile'
 import { remapErrors, formatError } from './errors'
 import { getExportsFromExterns } from './externs'
@@ -16,7 +16,7 @@ export function pue(options: PueOptions = {}): Plugin {
   const srcDirs = options.srcDirs ?? ['src']
   const pursCommand = options.pursCommand ?? 'spago build'
   const debug = options.debug ?? false
-  const modulePrefix = options.modulePrefix ?? 'Pue'
+  const modulePrefix = options.modulePrefix ?? 'App'
 
   let root: string
   let server: ViteDevServer | undefined
@@ -24,6 +24,10 @@ export function pue(options: PueOptions = {}): Plugin {
 
   function log(msg: string) {
     if (debug) console.log(`[pue] ${msg}`)
+  }
+
+  function fallbackName(filePath: string): string {
+    return moduleNameFromPath(filePath, root, srcDirs, modulePrefix)
   }
 
   function getExports(moduleName: string): string[] {
@@ -128,7 +132,7 @@ export function pue(options: PueOptions = {}): Plugin {
     transform(code, id) {
       if (!id.endsWith('.vue')) return null
 
-      const result = extract(code, id, modulePrefix)
+      const result = extract(code, fallbackName(id))
       if (!result) return null
 
       const { moduleName, code: pursCode, fullMatch } = result
@@ -152,7 +156,7 @@ export function pue(options: PueOptions = {}): Plugin {
       if (!ctx.file.endsWith('.vue')) return
 
       const content = await ctx.read()
-      const result = extract(content, ctx.file, modulePrefix)
+      const result = extract(content, fallbackName(ctx.file))
       if (!result) return
 
       writePursFile(root, result.moduleName, result.code)
