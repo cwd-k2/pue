@@ -2,14 +2,16 @@ module Pue
   ( -- Layer 0: Algebra
     Ref
   -- Layer 1: Ref Primitives
-  , ref, shallowRef, computed, toRef, useTemplateRef
+  , ref, shallowRef, computed, customRef, toRef, useTemplateRef, useModel
   , readRef
-  , writeRef, modifyRef
+  , writeRef, modifyRef, triggerRef
   -- Layer 2: Subscriptions
-  , watch, watchEffect
+  , watch, watchEffect, watchPostEffect, watchSyncEffect
   , onBeforeMount, onMounted, onBeforeUpdate, onUpdated, onBeforeUnmount, onUnmounted
+  , onActivated, onDeactivated
   , onErrorCaptured
   , nextTick
+  , EffectScope, effectScope, runScope, stopScope, onScopeDispose
   -- Layer 3: Component Interface
   , DefineProps, defineProps
   , DefineEmits, defineEmits
@@ -75,14 +77,16 @@ instance BooleanAlgebra a => BooleanAlgebra (Ref a)
 -- Layer 1: Ref Primitives
 --
 -- Effectful operations on the reactive state cell.
--- Construction, read, and write.
+-- Ordered by source complexity: pure value → derived → reactive object → template.
 
 -- | Construct: ... -> Effect (Ref a)
 foreign import ref :: forall a. a -> Effect (Ref a)
 foreign import shallowRef :: forall a. a -> Effect (Ref a)
 foreign import computed :: forall a. Effect a -> Effect (Ref a)
+foreign import customRef :: forall a. (Effect Unit -> Effect Unit -> { get :: Effect a, set :: a -> Effect Unit }) -> Effect (Ref a)
 foreign import toRef :: forall props a. props -> String -> Effect (Ref a)
 foreign import useTemplateRef :: forall a. String -> Effect (Ref a)
+foreign import useModel :: forall props a. props -> String -> Effect (Ref a)
 
 -- | Read: Ref a -> Effect a
 foreign import readRef :: forall a. Ref a -> Effect a
@@ -90,15 +94,18 @@ foreign import readRef :: forall a. Ref a -> Effect a
 -- | Write: ... -> Ref a -> Effect Unit
 foreign import writeRef :: forall a. a -> Ref a -> Effect Unit
 foreign import modifyRef :: forall a. (a -> a) -> Ref a -> Effect Unit
+foreign import triggerRef :: forall a. Ref a -> Effect Unit
 
 -- Layer 2: Subscriptions
 --
--- Callback registration for reactive, lifecycle, and temporal events.
+-- Callback registration for reactive, lifecycle, temporal, and scope events.
 -- Common pattern: register an effect to be executed at a specific point.
 
 -- | Reactive observation
 foreign import watch :: forall a. Ref a -> (a -> a -> Effect Unit) -> Effect Unit
 foreign import watchEffect :: Effect Unit -> Effect Unit
+foreign import watchPostEffect :: Effect Unit -> Effect Unit
+foreign import watchSyncEffect :: Effect Unit -> Effect Unit
 
 -- | Lifecycle: component state machine transitions
 foreign import onBeforeMount :: Effect Unit -> Effect Unit
@@ -107,10 +114,19 @@ foreign import onBeforeUpdate :: Effect Unit -> Effect Unit
 foreign import onUpdated :: Effect Unit -> Effect Unit
 foreign import onBeforeUnmount :: Effect Unit -> Effect Unit
 foreign import onUnmounted :: Effect Unit -> Effect Unit
+foreign import onActivated :: Effect Unit -> Effect Unit
+foreign import onDeactivated :: Effect Unit -> Effect Unit
 foreign import onErrorCaptured :: forall a. (a -> Effect Boolean) -> Effect Unit
 
 -- | Temporal: deferred execution
 foreign import nextTick :: Effect Unit -> Effect Unit
+
+-- | Scope: subscription lifetime management
+foreign import data EffectScope :: Type
+foreign import effectScope :: Effect EffectScope
+foreign import runScope :: forall a. EffectScope -> Effect a -> Effect a
+foreign import stopScope :: EffectScope -> Effect Unit
+foreign import onScopeDispose :: Effect Unit -> Effect Unit
 
 -- Layer 3: Component Interface
 --

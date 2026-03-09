@@ -243,6 +243,28 @@ export function pue(options: PueOptions = {}): Plugin {
     return match[1].trim()
   }
 
+  function extractDefaultsRecord(source: string): Record<string, string> | null {
+    const re = /^defaults\s*=\s*\{([^}]+)\}/m
+    const match = re.exec(source)
+    if (!match) return null
+
+    const result: Record<string, string> = {}
+    for (const field of match[1].split(',')) {
+      const m = field.trim().match(/^(\w+)\s*:\s*(.+?)\s*$/)
+      if (m) result[m[1]] = m[2]
+    }
+    return Object.keys(result).length > 0 ? result : null
+  }
+
+  function propEntry(name: string, type: string, defaultsMap: Record<string, string> | null): string {
+    const vueType = pursTypeToVue(type)
+    const defaultVal = defaultsMap?.[name]
+    const parts: string[] = []
+    if (vueType) parts.push(`type: ${vueType}`)
+    if (defaultVal != null) parts.push(`default: ${defaultVal}`)
+    return parts.length > 0 ? `${name}: { ${parts.join(', ')} }` : name
+  }
+
   function countSetupArgs(source: string): number {
     if (/^setup\s+(?:\{[^}]*\}|\w+)\s+(?:\{[^}]*\}|\w+)\s*=/m.test(source)) return 2
     if (/^setup\s+(?:\{[^}]*\}|\w+)\s*=/m.test(source)) return 1
@@ -271,7 +293,7 @@ export function pue(options: PueOptions = {}): Plugin {
     if (hasSetup) {
       const fields = extractRecordFields(pursCode)
       const fieldSet = new Set(fields ?? [])
-      const metaExports = new Set(['setup', 'components', 'expose', 'options', 'slots'])
+      const metaExports = new Set(['setup', 'components', 'expose', 'options', 'slots', 'defaults'])
       const pureExports = exports.filter(e => !metaExports.has(e) && !fieldSet.has(e))
 
       if (fields && fields.length > 0) {
@@ -331,7 +353,9 @@ export function pue(options: PueOptions = {}): Plugin {
       const exposeMap = extractDefineRecord(pursCode, 'expose')
       const optionsRecord = extractOptionsRecord(pursCode)
 
-      const metaExports = new Set(['setup', 'props', 'emits', 'model', 'components', 'expose', 'options', 'slots'])
+      const defaultsMap = extractDefaultsRecord(pursCode)
+
+      const metaExports = new Set(['setup', 'props', 'emits', 'model', 'components', 'expose', 'options', 'slots', 'defaults'])
       const pureExports = exports.filter(e => !metaExports.has(e) && !fieldSet.has(e))
 
       const importNames = ['setup as __pue_setup', ...pureExports]
@@ -346,14 +370,12 @@ export function pue(options: PueOptions = {}): Plugin {
       const propsEntries: string[] = []
       if (definePropsMap) {
         for (const [name, type] of Object.entries(definePropsMap)) {
-          const vueType = pursTypeToVue(type)
-          propsEntries.push(vueType ? `${name}: { type: ${vueType} }` : name)
+          propsEntries.push(propEntry(name, type, defaultsMap))
         }
       }
       if (modelMap) {
         for (const [name, type] of Object.entries(modelMap)) {
-          const vueType = pursTypeToVue(type)
-          propsEntries.push(vueType ? `${name}: { type: ${vueType} }` : name)
+          propsEntries.push(propEntry(name, type, defaultsMap))
         }
       }
       if (propsEntries.length > 0) {

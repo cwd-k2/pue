@@ -93,6 +93,16 @@ result <- computed do
   pure (c * 2)
 ```
 
+#### `customRef :: forall a. (Effect Unit -> Effect Unit -> { get :: Effect a, set :: a -> Effect Unit }) -> Effect (Ref a)`
+
+Create a ref with explicit control over dependency tracking and update triggering.
+
+```purescript
+debounced <- customRef \track trigger -> { get: track *> readRef value, set: \v -> writeRef v value *> delay 300 trigger }
+```
+
+The factory receives `track` and `trigger` callbacks and returns `{ get, set }` accessors.
+
 #### `toRef :: forall props a. props -> String -> Effect (Ref a)`
 
 Create a reactive ref linked to a property of a reactive object (typically props).
@@ -113,6 +123,15 @@ Create a ref bound to a template `ref="..."` attribute.
 inputEl <- useTemplateRef "inputEl"
 ```
 
+#### `useModel :: forall props a. props -> String -> Effect (Ref a)`
+
+Create a writable ref bound to a `v-model` prop. Reads from the prop and emits `update:<name>` on write.
+
+```purescript
+setup p = do
+  titleRef <- useModel p "title"
+```
+
 ### Read: `Ref a -> Effect a`
 
 #### `readRef :: forall a. Ref a -> Effect a`
@@ -131,6 +150,14 @@ Transform the current value.
 
 ```purescript
 modifyRef (_ + 1) count
+```
+
+#### `triggerRef :: forall a. Ref a -> Effect Unit`
+
+Force a trigger on a `shallowRef`. Use when the inner value is mutated without replacing it.
+
+```purescript
+triggerRef myShallowRef
 ```
 
 ---
@@ -160,15 +187,25 @@ watchEffect do
   writeRef (if mod c 2 == 0 then "even" else "odd") parity
 ```
 
+#### `watchPostEffect :: Effect Unit -> Effect Unit`
+
+Like `watchEffect`, but deferred until after DOM updates. Use when the effect needs to read updated DOM state.
+
+#### `watchSyncEffect :: Effect Unit -> Effect Unit`
+
+Like `watchEffect`, but runs synchronously on every reactive change. Use sparingly — typically for debuggers or low-level state synchronization.
+
 ### Lifecycle: Component State Machine Transitions
 
 ```purescript
-onBeforeMount   :: Effect Unit -> Effect Unit
-onMounted       :: Effect Unit -> Effect Unit
-onBeforeUpdate  :: Effect Unit -> Effect Unit
-onUpdated       :: Effect Unit -> Effect Unit
-onBeforeUnmount :: Effect Unit -> Effect Unit
-onUnmounted     :: Effect Unit -> Effect Unit
+onBeforeMount   :: Effect Unit -> Effect Unit   -- before initial mount
+onMounted       :: Effect Unit -> Effect Unit   -- after mounted to DOM
+onBeforeUpdate  :: Effect Unit -> Effect Unit   -- before reactive re-render
+onUpdated       :: Effect Unit -> Effect Unit   -- after re-render
+onBeforeUnmount :: Effect Unit -> Effect Unit   -- before teardown
+onUnmounted     :: Effect Unit -> Effect Unit   -- after teardown
+onActivated     :: Effect Unit -> Effect Unit   -- KeepAlive: re-activated
+onDeactivated   :: Effect Unit -> Effect Unit   -- KeepAlive: deactivated
 ```
 
 ```purescript
@@ -191,6 +228,40 @@ onErrorCaptured \err -> do
 #### `nextTick :: Effect Unit -> Effect Unit`
 
 Register an effect to run after the next DOM update cycle.
+
+### Scope: Subscription Lifetime Management
+
+#### `EffectScope :: Type`
+
+Opaque handle for a reactive effect scope.
+
+#### `effectScope :: Effect EffectScope`
+
+Create a new effect scope. All reactive effects registered inside `runScope` are collected and can be stopped together.
+
+#### `runScope :: forall a. EffectScope -> Effect a -> Effect a`
+
+Run an effect inside a scope. Watchers and computed refs created during execution belong to the scope.
+
+#### `stopScope :: EffectScope -> Effect Unit`
+
+Stop all effects in a scope.
+
+#### `onScopeDispose :: Effect Unit -> Effect Unit`
+
+Register a cleanup callback on the current active scope.
+
+```purescript
+scope <- effectScope
+runScope scope do
+  watchEffect do
+    c <- readRef count
+    log (show c)
+  onScopeDispose do
+    log "scope disposed"
+-- later:
+stopScope scope
+```
 
 ---
 
@@ -247,6 +318,18 @@ slots = defineSlots
 ```
 
 Declares named slot types for documentation and tooling.
+
+#### Defaults (record literal)
+
+```purescript
+props :: DefineProps { msg :: String, count :: Int }
+props = defineProps
+
+defaults = { count: 0 }
+```
+
+Default values are merged into the generated prop definitions:
+`props: { msg: { type: String }, count: { type: Number, default: 0 } }`.
 
 #### DefineOptions (record literal)
 
