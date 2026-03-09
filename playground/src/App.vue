@@ -26,16 +26,16 @@
       <WatchPostDemo />
     </div>
 
+    <h3>EffectScope</h3>
+    <div class="grid">
+      <ScopeDemo />
+    </div>
+
     <h3>Lifecycle Hooks</h3>
     <div class="grid">
       <MountedDemo />
       <LifecycleDemo />
       <KeepAliveDemo />
-    </div>
-
-    <h3>Provide / Inject</h3>
-    <div class="grid">
-      <ProvideInject />
     </div>
 
     <h3>Props &amp; Emits</h3>
@@ -54,6 +54,11 @@
       <ExposeDemo />
     </div>
 
+    <h3>Provide / Inject</h3>
+    <div class="grid">
+      <ProvideInject />
+    </div>
+
     <h3>Slots</h3>
     <div class="grid">
       <SlotDemo />
@@ -64,11 +69,6 @@
       <TemplateRefDemo />
       <CustomRefDemo />
       <IdDemo />
-    </div>
-
-    <h3>EffectScope</h3>
-    <div class="grid">
-      <ScopeDemo />
     </div>
 
     <h3>Error Handling</h3>
@@ -86,42 +86,57 @@
 </template>
 
 <script setup>
-import Counter from './components/Counter.vue'
-import DoubleCounter from './components/DoubleCounter.vue'
-import Fibonacci from './components/Fibonacci.vue'
-import Toggle from './components/Toggle.vue'
-import Stepper from './components/Stepper.vue'
-import Temperature from './components/Temperature.vue'
-import Collatz from './components/Collatz.vue'
-import GCD from './components/GCD.vue'
-import WatchDemo from './components/WatchDemo.vue'
-import WatchEffectDemo from './components/WatchEffectDemo.vue'
-import WatchPostDemo from './components/WatchPostDemo.vue'
-import MountedDemo from './components/MountedDemo.vue'
-import LifecycleDemo from './components/LifecycleDemo.vue'
-import KeepAliveDemo from './components/KeepAliveDemo.vue'
-import ProvideInject from './components/ProvideInject.vue'
-import PropsDemo from './components/PropsDemo.vue'
-import ModelDemo from './components/ModelDemo.vue'
-import MultiModelDemo from './components/MultiModelDemo.vue'
-import ExposeDemo from './components/ExposeDemo.vue'
-import SlotDemo from './components/SlotDemo.vue'
-import TemplateRefDemo from './components/TemplateRefDemo.vue'
-import CustomRefDemo from './components/CustomRefDemo.vue'
-import IdDemo from './components/IdDemo.vue'
-import ScopeDemo from './components/ScopeDemo.vue'
-import ErrorDemo from './components/ErrorDemo.vue'
-import Greeting from './components/Greeting.vue'
-import OptionsDemo from './components/OptionsDemo.vue'
-import OptionsAttrDemo from './components/OptionsAttrDemo.vue'
+// Reactivity
+import Counter from './components/reactivity/Counter.vue'
+import DoubleCounter from './components/reactivity/DoubleCounter.vue'
+import Fibonacci from './components/reactivity/Fibonacci.vue'
+import Toggle from './components/reactivity/Toggle.vue'
+import Stepper from './components/reactivity/Stepper.vue'
+import Temperature from './components/reactivity/Temperature.vue'
+import Collatz from './components/reactivity/Collatz.vue'
+import GCD from './components/reactivity/GCD.vue'
+
+// Watch
+import WatchDemo from './components/watch/WatchDemo.vue'
+import WatchEffectDemo from './components/watch/WatchEffectDemo.vue'
+import WatchPostDemo from './components/watch/WatchPostDemo.vue'
+import ScopeDemo from './components/watch/ScopeDemo.vue'
+
+// Lifecycle
+import MountedDemo from './components/lifecycle/MountedDemo.vue'
+import LifecycleDemo from './components/lifecycle/LifecycleDemo.vue'
+import KeepAliveDemo from './components/lifecycle/KeepAliveDemo.vue'
+
+// Props / Model / Expose
+import PropsDemo from './components/props/PropsDemo.vue'
+import ModelDemo from './components/props/ModelDemo.vue'
+import MultiModelDemo from './components/props/MultiModelDemo.vue'
+import ExposeDemo from './components/props/ExposeDemo.vue'
+
+// Context
+import ProvideInject from './components/inject/ProvideInject.vue'
+import SlotDemo from './components/slots/SlotDemo.vue'
+
+// Refs
+import TemplateRefDemo from './components/refs/TemplateRefDemo.vue'
+import CustomRefDemo from './components/refs/CustomRefDemo.vue'
+import IdDemo from './components/refs/IdDemo.vue'
+
+// Errors
+import ErrorDemo from './components/errors/ErrorDemo.vue'
+
+// Misc
+import Greeting from './components/misc/Greeting.vue'
+import OptionsDemo from './components/misc/OptionsDemo.vue'
+import OptionsAttrDemo from './components/misc/OptionsAttrDemo.vue'
 
 const components = [
   'Counter', 'DoubleCounter', 'Fibonacci', 'Toggle', 'Stepper',
   'Temperature', 'Collatz', 'GCD', 'WatchDemo', 'WatchEffectDemo',
-  'WatchPostDemo', 'MountedDemo', 'LifecycleDemo', 'KeepAliveDemo',
-  'ProvideInject', 'PropsDemo', 'ModelDemo', 'MultiModelDemo',
-  'ExposeDemo', 'SlotDemo', 'TemplateRefDemo', 'CustomRefDemo',
-  'IdDemo', 'ScopeDemo', 'ErrorDemo',
+  'WatchPostDemo', 'ScopeDemo', 'MountedDemo', 'LifecycleDemo',
+  'KeepAliveDemo', 'ProvideInject', 'PropsDemo', 'ModelDemo',
+  'MultiModelDemo', 'ExposeDemo', 'SlotDemo', 'TemplateRefDemo',
+  'CustomRefDemo', 'IdDemo', 'ErrorDemo',
   'Greeting', 'OptionsDemo', 'OptionsAttrDemo',
 ]
 </script>
