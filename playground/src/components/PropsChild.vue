@@ -12,7 +12,7 @@
 module Pue.PropsChild where
 
 import Prelude
-import Pue (DefineProps, defineProps, DefineEmits, defineEmits, Ref, computed, readRef, toRef)
+import Pue (DefineProps, defineProps, DefineEmits, defineEmits, Ref, toRef)
 
 props :: DefineProps { msg :: String, count :: Int }
 props = defineProps
@@ -22,9 +22,7 @@ emits = defineEmits
 
 setup p emit = do
   countRef <- toRef p "count"
-  doubled <- computed do
-    c <- readRef countRef
-    pure (c * 2)
+  let doubled = (_ * 2) <$> countRef
   let notify = emit "notify" unit
   pure { doubled, notify }
 </script>

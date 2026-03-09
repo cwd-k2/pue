@@ -236,6 +236,13 @@ export function pue(options: PueOptions = {}): Plugin {
     return extractDefineRecord(source, 'model')
   }
 
+  function extractOptionsRecord(source: string): string | null {
+    const re = /^options\s*=\s*\{([^}]+)\}/m
+    const match = re.exec(source)
+    if (!match) return null
+    return match[1].trim()
+  }
+
   function countSetupArgs(source: string): number {
     if (/^setup\s+(?:\{[^}]*\}|\w+)\s+(?:\{[^}]*\}|\w+)\s*=/m.test(source)) return 2
     if (/^setup\s+(?:\{[^}]*\}|\w+)\s*=/m.test(source)) return 1
@@ -254,6 +261,8 @@ export function pue(options: PueOptions = {}): Plugin {
     const hasSetup = exports.includes('setup')
     const lines: string[] = []
     const components = extractStringArray(pursCode, 'components')
+    const exposeMap = extractDefineRecord(pursCode, 'expose')
+    const optionsRecord = extractOptionsRecord(pursCode)
 
     if (components) {
       for (const c of components) lines.push(`import ${c} from './${c}.vue'`)
@@ -262,7 +271,7 @@ export function pue(options: PueOptions = {}): Plugin {
     if (hasSetup) {
       const fields = extractRecordFields(pursCode)
       const fieldSet = new Set(fields ?? [])
-      const metaExports = new Set(['setup', 'components'])
+      const metaExports = new Set(['setup', 'components', 'expose', 'options', 'slots'])
       const pureExports = exports.filter(e => !metaExports.has(e) && !fieldSet.has(e))
 
       if (fields && fields.length > 0) {
@@ -277,8 +286,15 @@ export function pue(options: PueOptions = {}): Plugin {
         lines.push(`const __pue_bindings = __pue_setup()`)
       }
     } else {
-      const metaExports = new Set(['components'])
+      const metaExports = new Set(['components', 'expose', 'options', 'slots'])
       lines.push(`import { ${exports.filter(e => !metaExports.has(e)).join(', ')} } from '${compiledPath}'`)
+    }
+
+    if (exposeMap) {
+      lines.push(`defineExpose({ ${Object.keys(exposeMap).join(', ')} })`)
+    }
+    if (optionsRecord) {
+      lines.push(`defineOptions({ ${optionsRecord} })`)
     }
 
     return sfcContent.replace(fullMatch, `<script setup>\n${lines.join('\n')}\n</script>`)
@@ -312,7 +328,10 @@ export function pue(options: PueOptions = {}): Plugin {
       const emitsArray = extractStringArray(pursCode, 'emits')
       const setupArgs = countSetupArgs(pursCode)
 
-      const metaExports = new Set(['setup', 'props', 'emits', 'model', 'components'])
+      const exposeMap = extractDefineRecord(pursCode, 'expose')
+      const optionsRecord = extractOptionsRecord(pursCode)
+
+      const metaExports = new Set(['setup', 'props', 'emits', 'model', 'components', 'expose', 'options', 'slots'])
       const pureExports = exports.filter(e => !metaExports.has(e) && !fieldSet.has(e))
 
       const importNames = ['setup as __pue_setup', ...pureExports]
@@ -320,6 +339,8 @@ export function pue(options: PueOptions = {}): Plugin {
 
       const options: string[] = []
       if (components) options.push(`components: { ${components.join(', ')} }`)
+      if (exposeMap) options.push(`expose: ${JSON.stringify(Object.keys(exposeMap))}`)
+      if (optionsRecord) options.push(optionsRecord)
 
       // Props: DefineProps + DefineModel → typed object, else string array
       const propsEntries: string[] = []

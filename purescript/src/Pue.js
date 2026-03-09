@@ -23,3 +23,19 @@ export const toRef = (obj) => (key) => () => Vue.toRef(obj, key);
 export const defineProps = null;
 export const defineEmits = null;
 export const defineModel = null;
+export const defineExpose = null;
+export const defineSlots = null;
+
+// Layer 0: Algebraic core — Ref as Functor / Apply / Applicative
+export const mapRef = (f) => (r) => Vue.computed(() => f(r.value));
+export const applyRef = (fRef) => (aRef) => Vue.computed(() => fRef.value(aRef.value));
+export const pureRef = (val) => Vue.computed(() => val);
+
+// Layer 3: Runtime utilities
+export const useTemplateRef = (name) => () => Vue.useTemplateRef(name);
+export const useSlots = () => Vue.useSlots();
+export const useAttrs = () => Vue.useAttrs();
+export const useId = () => Vue.useId();
+export const onErrorCaptured = (handler) => () => {
+  Vue.onErrorCaptured((err) => handler(err)());
+};

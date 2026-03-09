@@ -23,7 +23,7 @@ setup = do
 </script>
 ```
 
-PureScript's type system meets Vue's reactivity. No code generation, no separate files — just `lang="purs"` in your `<script>` block.
+PureScript's type system and algebraic structures meet Vue's reactivity. No code generation, no separate files — just `lang="purs"` in your `<script>` block.
 
 ## Install
 
@@ -75,31 +75,38 @@ setup = do
 
 ## API
 
-The `Pue` module provides Vue bindings for PureScript:
+The `Pue` module is organized in four layers:
+
+```
+Layer 0  Algebraic Core       Ref as Functor / Apply / Applicative
+Layer 1  Effect Operations    ref, readRef, writeRef, computed, watch, lifecycle, ...
+Layer 2  Component Interface  DefineProps, DefineEmits, DefineModel, DefineExpose, DefineSlots
+Layer 3  Runtime Utilities    useTemplateRef, useSlots, useAttrs, useId
+```
+
+### Ref as Functor / Applicative
+
+`Ref` supports `<$>` and `<*>` — derived refs are created as `Vue.computed` automatically:
 
 ```purescript
--- Reactivity
-ref         :: forall a. a -> Effect (Ref a)
-readRef     :: forall a. Ref a -> Effect a
-writeRef    :: forall a. a -> Ref a -> Effect Unit
-modifyRef   :: forall a. (a -> a) -> Ref a -> Effect Unit
-computed    :: forall a. Effect a -> Effect (Ref a)
-shallowRef  :: forall a. a -> Effect (Ref a)
+a <- ref 0
+b <- ref 0
+let total = a + b                -- Semiring: computed(() => a.value + b.value)
+let doubled = (_ * 2) <$> count  -- Functor: computed(() => count.value * 2)
+let combined = (\x y -> x <> ": " <> y) <$> title <*> content  -- Apply
+```
 
--- Watchers
-watch       :: forall a. Ref a -> (a -> a -> Effect Unit) -> Effect Unit
-watchEffect :: Effect Unit -> Effect Unit
+### Component Interface
 
--- Lifecycle
-onBeforeMount, onMounted, onBeforeUpdate, onUpdated,
-onBeforeUnmount, onUnmounted :: Effect Unit -> Effect Unit
+```purescript
+props :: DefineProps { msg :: String, count :: Int }
+props = defineProps
 
--- Dependency injection
-provide     :: forall a. String -> a -> Effect Unit
-inject      :: forall a. String -> a -> Effect a
+emits :: DefineEmits { notify :: Unit }
+emits = defineEmits
 
--- Async
-nextTick    :: Effect Unit -> Effect Unit
+model :: DefineModel { title :: String, content :: String }
+model = defineModel
 ```
 
 See [docs/api.md](docs/api.md) for full reference.

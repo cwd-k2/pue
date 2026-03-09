@@ -11,14 +11,11 @@
 module Pue.Temperature where
 
 import Prelude
-import Effect (Effect)
-import Pue (Ref, ref, readRef, modifyRef, computed)
+import Pue (Ref, ref, modifyRef)
 
 setup = do
   celsius <- ref 20
-  fahrenheit <- computed do
-    c <- readRef celsius
-    pure (c * 9 / 5 + 32)
+  let fahrenheit = (\c -> c * 9 / 5 + 32) <$> celsius
   let hotter = modifyRef (_ + 5) celsius
   let cooler = modifyRef (_ - 5) celsius
   pure { celsius, fahrenheit, hotter, cooler }

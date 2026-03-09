@@ -12,16 +12,12 @@
 module Pue.DoubleCounter where
 
 import Prelude
-import Effect (Effect)
-import Pue (Ref, ref, readRef, writeRef, modifyRef, computed)
+import Pue (Ref, ref, writeRef, modifyRef)
 
 setup = do
   a <- ref 0
   b <- ref 0
-  total <- computed do
-    va <- readRef a
-    vb <- readRef b
-    pure (va + vb)
+  let total = a + b
   let incA = modifyRef (_ + 1) a
   let incB = modifyRef (_ + 1) b
   let reset = do

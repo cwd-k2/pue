@@ -46,10 +46,32 @@
       <MultiModelDemo />
     </div>
 
+    <h3>Expose</h3>
+    <div class="grid">
+      <ExposeDemo />
+    </div>
+
+    <h3>Slots</h3>
+    <div class="grid">
+      <SlotDemo />
+    </div>
+
+    <h3>Template Ref &amp; useId</h3>
+    <div class="grid">
+      <TemplateRefDemo />
+      <IdDemo />
+    </div>
+
+    <h3>Error Handling</h3>
+    <div class="grid">
+      <ErrorDemo />
+    </div>
+
     <h3>Pure Exports &amp; Options API</h3>
     <div class="grid">
       <Greeting />
       <OptionsDemo />
+      <OptionsAttrDemo />
     </div>
   </div>
 </template>
@@ -70,14 +92,21 @@ import ProvideInject from './components/ProvideInject.vue'
 import PropsDemo from './components/PropsDemo.vue'
 import ModelDemo from './components/ModelDemo.vue'
 import MultiModelDemo from './components/MultiModelDemo.vue'
+import ExposeDemo from './components/ExposeDemo.vue'
+import SlotDemo from './components/SlotDemo.vue'
+import TemplateRefDemo from './components/TemplateRefDemo.vue'
+import IdDemo from './components/IdDemo.vue'
+import ErrorDemo from './components/ErrorDemo.vue'
 import Greeting from './components/Greeting.vue'
 import OptionsDemo from './components/OptionsDemo.vue'
+import OptionsAttrDemo from './components/OptionsAttrDemo.vue'
 
 const components = [
   'Counter', 'DoubleCounter', 'Fibonacci', 'Toggle', 'Stepper',
   'Temperature', 'Collatz', 'GCD', 'WatchDemo', 'WatchEffectDemo',
   'Lifecycle', 'ProvideInject', 'PropsDemo', 'ModelDemo', 'MultiModelDemo',
-  'Greeting', 'OptionsDemo',
+  'ExposeDemo', 'SlotDemo', 'TemplateRefDemo', 'IdDemo', 'ErrorDemo',
+  'Greeting', 'OptionsDemo', 'OptionsAttrDemo',
 ]
 </script>
 

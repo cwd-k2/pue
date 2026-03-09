@@ -14,7 +14,7 @@
 module Pue.MultiModelChild where
 
 import Prelude
-import Pue (DefineModel, defineModel, Ref, computed, readRef, toRef)
+import Pue (DefineModel, defineModel, Ref, toRef)
 
 model :: DefineModel { title :: String, content :: String }
 model = defineModel
@@ -22,10 +22,7 @@ model = defineModel
 setup p emit = do
   titleRef <- toRef p "title"
   contentRef <- toRef p "content"
-  combined <- computed do
-    t <- readRef titleRef
-    c <- readRef contentRef
-    pure (t <> ": " <> c)
+  let combined = (\t c -> t <> ": " <> c) <$> titleRef <*> contentRef
   let updateTitle = emit "update:title"
   let updateContent = emit "update:content"
   pure { combined, updateTitle, updateContent }

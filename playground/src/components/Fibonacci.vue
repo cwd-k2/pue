@@ -11,8 +11,7 @@
 module Pue.Fibonacci where
 
 import Prelude
-import Effect (Effect)
-import Pue (Ref, ref, readRef, writeRef, modifyRef, computed)
+import Pue (Ref, ref, writeRef, modifyRef)
 
 fib :: Int -> Int
 fib n = go n 0 1
@@ -22,9 +21,7 @@ fib n = go n 0 1
 
 setup = do
   n <- ref 0
-  fibVal <- computed do
-    v <- readRef n
-    pure (fib v)
+  let fibVal = fib <$> n
   let next = modifyRef (_ + 1) n
   let reset = writeRef 0 n
   pure { n, fibVal, next, reset }
