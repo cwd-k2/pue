@@ -17,12 +17,26 @@ module Pue
   , inject
   , nextTick
   , shallowRef
+  , toRef
+  , DefineProps
+  , defineProps
+  , DefineEmits
+  , defineEmits
+  , DefineModel
+  , defineModel
   ) where
 
 import Data.Unit (Unit)
 import Effect (Effect)
 
 foreign import data Ref :: Type -> Type
+foreign import data DefineProps :: Type -> Type
+foreign import data DefineEmits :: Type -> Type
+foreign import data DefineModel :: Type -> Type
+
+foreign import defineProps :: forall a. DefineProps a
+foreign import defineEmits :: forall a. DefineEmits a
+foreign import defineModel :: forall a. DefineModel a
 
 foreign import ref :: forall a. a -> Effect (Ref a)
 foreign import readRef :: forall a. Ref a -> Effect a
@@ -41,3 +55,4 @@ foreign import provide :: forall a. String -> a -> Effect Unit
 foreign import inject :: forall a. String -> a -> Effect a
 foreign import nextTick :: Effect Unit -> Effect Unit
 foreign import shallowRef :: forall a. a -> Effect (Ref a)
+foreign import toRef :: forall props a. props -> String -> Effect (Ref a)

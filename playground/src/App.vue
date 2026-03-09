@@ -35,6 +35,17 @@
       <ProvideInject />
     </div>
 
+    <h3>Props &amp; Emits</h3>
+    <div class="grid">
+      <PropsDemo />
+    </div>
+
+    <h3>v-model</h3>
+    <div class="grid">
+      <ModelDemo />
+      <MultiModelDemo />
+    </div>
+
     <h3>Pure Exports &amp; Options API</h3>
     <div class="grid">
       <Greeting />
@@ -56,13 +67,17 @@ import WatchDemo from './components/WatchDemo.vue'
 import WatchEffectDemo from './components/WatchEffectDemo.vue'
 import Lifecycle from './components/Lifecycle.vue'
 import ProvideInject from './components/ProvideInject.vue'
+import PropsDemo from './components/PropsDemo.vue'
+import ModelDemo from './components/ModelDemo.vue'
+import MultiModelDemo from './components/MultiModelDemo.vue'
 import Greeting from './components/Greeting.vue'
 import OptionsDemo from './components/OptionsDemo.vue'
 
 const components = [
   'Counter', 'DoubleCounter', 'Fibonacci', 'Toggle', 'Stepper',
   'Temperature', 'Collatz', 'GCD', 'WatchDemo', 'WatchEffectDemo',
-  'Lifecycle', 'ProvideInject', 'Greeting', 'OptionsDemo',
+  'Lifecycle', 'ProvideInject', 'PropsDemo', 'ModelDemo', 'MultiModelDemo',
+  'Greeting', 'OptionsDemo',
 ]
 </script>
 

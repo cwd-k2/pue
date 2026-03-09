@@ -9,7 +9,7 @@ import Pue
   ( Ref, ref, readRef, writeRef, modifyRef
   , computed, watch, watchEffect
   , onBeforeMount, onMounted, onBeforeUpdate, onUpdated, onBeforeUnmount, onUnmounted
-  , provide, inject, nextTick, shallowRef
+  , provide, inject, nextTick, shallowRef, toRef
   )
 ```
 
@@ -60,6 +60,21 @@ modifyRef not toggle      -- flip boolean
 #### `shallowRef :: forall a. a -> Effect (Ref a)`
 
 Create a ref that does not deeply track nested values. Only `.value` replacement triggers reactivity.
+
+#### `toRef :: forall props a. props -> String -> Effect (Ref a)`
+
+Create a reactive ref linked to a property of a reactive object (typically props). Essential for reactive prop access inside `computed` or `watchEffect`.
+
+```purescript
+setup p emit = do
+  countRef <- toRef p "count"
+  doubled <- computed do
+    c <- readRef countRef
+    pure (c * 2)
+  pure { doubled }
+```
+
+**Why `toRef`?** Direct prop access like `p.count` in PureScript is eagerly evaluated — using it inside `pure (p.count * 2)` captures the value at setup time, not reactively. `toRef` creates a `Ref` that can be read with `readRef` inside an Effect chain, preserving Vue's dependency tracking.
 
 ### Computed
 

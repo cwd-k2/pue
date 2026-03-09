@@ -19,3 +19,7 @@ export const provide = (key) => (value) => () => Vue.provide(key, value);
 export const inject = (key) => (defaultVal) => () => Vue.inject(key, defaultVal);
 export const nextTick = (effect) => () => Vue.nextTick(effect);
 export const shallowRef = (val) => () => Vue.shallowRef(val);
+export const toRef = (obj) => (key) => () => Vue.toRef(obj, key);
+export const defineProps = null;
+export const defineEmits = null;
+export const defineModel = null;

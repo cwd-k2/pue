@@ -201,6 +201,47 @@ export function pue(options: PueOptions = {}): Plugin {
     return fields
   }
 
+  // --- Props/emits extraction ---
+
+  function extractStringArray(source: string, name: string): string[] | null {
+    const re = new RegExp(`^${name}\\s*=\\s*\\[([^\\]]+)\\]`, 'm')
+    const match = re.exec(source)
+    if (!match) return null
+    return match[1].split(',').map(s => s.trim().replace(/^"(.*)"$/, '$1')).filter(Boolean)
+  }
+
+  function extractDefineRecord(source: string, name: string): Record<string, string> | null {
+    const re = new RegExp(`^${name}\\s*::\\s*\\w+\\s*\\{([^}]+)\\}`, 'm')
+    const match = re.exec(source)
+    if (!match) return null
+
+    const result: Record<string, string> = {}
+    for (const field of match[1].split(',')) {
+      const m = field.trim().match(/^(\w+)\s*::\s*(.+?)\s*$/)
+      if (m) result[m[1]] = m[2]
+    }
+    return Object.keys(result).length > 0 ? result : null
+  }
+
+  function pursTypeToVue(type: string): string | null {
+    switch (type) {
+      case 'String': return 'String'
+      case 'Int': case 'Number': return 'Number'
+      case 'Boolean': return 'Boolean'
+      default: return null
+    }
+  }
+
+  function extractDefineModel(source: string): Record<string, string> | null {
+    return extractDefineRecord(source, 'model')
+  }
+
+  function countSetupArgs(source: string): number {
+    if (/^setup\s+(?:\{[^}]*\}|\w+)\s+(?:\{[^}]*\}|\w+)\s*=/m.test(source)) return 2
+    if (/^setup\s+(?:\{[^}]*\}|\w+)\s*=/m.test(source)) return 1
+    return 0
+  }
+
   // --- SFC transform ---
 
   function transformSetupSFC(
@@ -212,11 +253,17 @@ export function pue(options: PueOptions = {}): Plugin {
   ): string {
     const hasSetup = exports.includes('setup')
     const lines: string[] = []
+    const components = extractStringArray(pursCode, 'components')
+
+    if (components) {
+      for (const c of components) lines.push(`import ${c} from './${c}.vue'`)
+    }
 
     if (hasSetup) {
       const fields = extractRecordFields(pursCode)
       const fieldSet = new Set(fields ?? [])
-      const pureExports = exports.filter(e => e !== 'setup' && !fieldSet.has(e))
+      const metaExports = new Set(['setup', 'components'])
+      const pureExports = exports.filter(e => !metaExports.has(e) && !fieldSet.has(e))
 
       if (fields && fields.length > 0) {
         if (pureExports.length > 0) {
@@ -230,7 +277,8 @@ export function pue(options: PueOptions = {}): Plugin {
         lines.push(`const __pue_bindings = __pue_setup()`)
       }
     } else {
-      lines.push(`import { ${exports.join(', ')} } from '${compiledPath}'`)
+      const metaExports = new Set(['components'])
+      lines.push(`import { ${exports.filter(e => !metaExports.has(e)).join(', ')} } from '${compiledPath}'`)
     }
 
     return sfcContent.replace(fullMatch, `<script setup>\n${lines.join('\n')}\n</script>`)
@@ -247,23 +295,75 @@ export function pue(options: PueOptions = {}): Plugin {
     const hasComponent = exports.includes('component')
     const lines: string[] = []
 
+    const components = extractStringArray(pursCode, 'components')
+
+    if (components) {
+      for (const c of components) lines.push(`import ${c} from './${c}.vue'`)
+    }
+
     if (hasSetup) {
-      // Composition API via setup() in Options object
       const fields = extractRecordFields(pursCode)
-      const pureExports = exports.filter(e => e !== 'setup')
+      const fieldSet = new Set(fields ?? [])
 
-      lines.push(`import { setup as __pue_setup${pureExports.length > 0 ? ', ' + pureExports.join(', ') : ''} } from '${compiledPath}'`)
+      const definePropsMap = extractDefineRecord(pursCode, 'props')
+      const defineEmitsMap = extractDefineRecord(pursCode, 'emits')
+      const modelMap = extractDefineModel(pursCode)
+      const propsArray = extractStringArray(pursCode, 'props')
+      const emitsArray = extractStringArray(pursCode, 'emits')
+      const setupArgs = countSetupArgs(pursCode)
 
-      if (fields && fields.length > 0) {
-        lines.push(`export default { setup() { return __pue_setup() } }`)
-      } else {
-        lines.push(`export default { setup: __pue_setup }`)
+      const metaExports = new Set(['setup', 'props', 'emits', 'model', 'components'])
+      const pureExports = exports.filter(e => !metaExports.has(e) && !fieldSet.has(e))
+
+      const importNames = ['setup as __pue_setup', ...pureExports]
+      lines.push(`import { ${importNames.join(', ')} } from '${compiledPath}'`)
+
+      const options: string[] = []
+      if (components) options.push(`components: { ${components.join(', ')} }`)
+
+      // Props: DefineProps + DefineModel → typed object, else string array
+      const propsEntries: string[] = []
+      if (definePropsMap) {
+        for (const [name, type] of Object.entries(definePropsMap)) {
+          const vueType = pursTypeToVue(type)
+          propsEntries.push(vueType ? `${name}: { type: ${vueType} }` : name)
+        }
       }
+      if (modelMap) {
+        for (const [name, type] of Object.entries(modelMap)) {
+          const vueType = pursTypeToVue(type)
+          propsEntries.push(vueType ? `${name}: { type: ${vueType} }` : name)
+        }
+      }
+      if (propsEntries.length > 0) {
+        options.push(`props: { ${propsEntries.join(', ')} }`)
+      } else if (propsArray) {
+        options.push(`props: ${JSON.stringify(propsArray)}`)
+      }
+
+      // Emits: merge DefineEmits + string array + DefineModel
+      const allEmits: string[] = []
+      if (defineEmitsMap) allEmits.push(...Object.keys(defineEmitsMap))
+      if (emitsArray) allEmits.push(...emitsArray)
+      if (modelMap) {
+        for (const name of Object.keys(modelMap)) allEmits.push(`update:${name}`)
+      }
+      if (allEmits.length > 0) options.push(`emits: ${JSON.stringify(allEmits)}`)
+
+      if (setupArgs >= 2) {
+        options.push(`setup(__props, { emit }) { return __pue_setup(__props)((name) => (value) => () => emit(name, value))() }`)
+      } else if (setupArgs === 1) {
+        options.push(`setup(__props) { return __pue_setup(__props)() }`)
+      } else if (fields && fields.length > 0) {
+        options.push(`setup() { return __pue_setup() }`)
+      } else {
+        options.push(`setup: __pue_setup`)
+      }
+
+      lines.push(`export default { ${options.join(', ')} }`)
     } else if (hasComponent) {
-      // Direct component options export
       lines.push(`export { component as default } from '${compiledPath}'`)
     } else {
-      // Re-export all as a component
       lines.push(`import * as __pue from '${compiledPath}'`)
       lines.push(`export default __pue`)
     }
