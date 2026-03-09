@@ -20,6 +20,7 @@
     "vite": ">=5.0.0"
   },
   "devDependencies": {
+    "@types/node": "^25.3.5",
     "@vitejs/plugin-vue": "^5.2.0",
     "purescript": "^0.15.0",
     "spago": "^0.21.0",
