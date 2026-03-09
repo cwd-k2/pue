@@ -129,9 +129,10 @@ See [docs/editor.md](docs/editor.md) for details.
 
 | Topic | Description |
 |-------|-------------|
+| [Type system](docs/type-system.md) | How Vue's reactivity maps to PureScript's types |
+| [API reference](docs/api.md) | PureScript bindings for Vue reactivity |
 | [Architecture](docs/architecture.md) | How the Vite plugin works internally |
 | [Editor support](docs/editor.md) | Neovim, VSCode, Volar setup |
-| [API reference](docs/api.md) | PureScript bindings for Vue reactivity |
 
 ## License
 
