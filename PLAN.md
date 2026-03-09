@@ -4,11 +4,13 @@ Vue の全機能を4層の理論的フレームワークに沿って整理・実
 
 ## 理論的フレームワーク
 
+型シグネチャのパターンで分類:
+
 ```
-Layer 0  代数的構造（純粋）    Ref の型クラスインスタンス
-Layer 1  Effect 操作（副作用）  生成・読み書き・観測・ビュー
-Layer 2  インターフェース       DefineX ファントム型マクロ
-Layer 3  ランタイムユーティリティ  Vue composable の FFI
+Layer 0  Algebra              Ref as Functor / Apply / Applicative + 導出インスタンス
+Layer 1  Ref Primitives       構築 (... -> Effect (Ref a))・読み (Ref a -> Effect a)・書き (... -> Ref a -> Effect Unit)
+Layer 2  Subscriptions        コールバック登録 (handler -> Effect Unit): 反応的観測・ライフサイクル・時制
+Layer 3  Component Interface  宣言 (ファントム型: DefineX) + 文脈 (provide/inject/useX)
 ```
 
 ---

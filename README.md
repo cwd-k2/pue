@@ -75,13 +75,13 @@ setup = do
 
 ## API
 
-The `Pue` module is organized in four layers:
+The `Pue` module is organized in four layers, classified by type signature pattern:
 
 ```
-Layer 0  Algebraic Core       Ref as Functor / Apply / Applicative
-Layer 1  Effect Operations    ref, readRef, writeRef, computed, watch, lifecycle, ...
-Layer 2  Component Interface  DefineProps, DefineEmits, DefineModel, DefineExpose, DefineSlots
-Layer 3  Runtime Utilities    useTemplateRef, useSlots, useAttrs, useId
+Layer 0  Algebra              Ref as Functor / Apply / Applicative + derived instances
+Layer 1  Ref Primitives       Construction, read, write of reactive state cells
+Layer 2  Subscriptions        Callback registration for reactive, lifecycle, temporal events
+Layer 3  Component Interface  Compile-time declarations (phantom) + runtime context
 ```
 
 ### Ref as Functor / Applicative
