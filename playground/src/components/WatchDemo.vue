@@ -10,16 +10,18 @@
 </template>
 
 <script lang="purs">
-module Pue.WatchDemo where
-
 import Prelude
-import Effect (Effect)
+
 import Pue (Ref, ref, modifyRef, watch)
 
 setup = do
-  count <- ref 0
+  count   <- ref 0
   history <- ref ([] :: Array String)
-  _ <- watch count (\newVal oldVal -> modifyRef (\xs -> xs <> [show oldVal <> " → " <> show newVal]) history)
+
+  _ <- watch count \new old ->
+    modifyRef (_ <> [show old <> " → " <> show new]) history
+
   let increment = modifyRef (_ + 1) count
+
   pure { count, history, increment }
 </script>

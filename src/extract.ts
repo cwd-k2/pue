@@ -8,17 +8,43 @@ const PURS_LANG_RE =
 const MODULE_NAME_RE = /^\s*module\s+([\w.]+)/m
 
 /**
- * Extract PureScript code from a Vue SFC.
+ * Derive a PureScript module name from a .vue file path.
+ * `src/components/Counter.vue` → `Pue.Counter`
  */
-export function extract(sfcContent: string): ExtractResult | null {
+export function moduleNameFromPath(filePath: string, prefix: string): string {
+  const basename = path.basename(filePath, '.vue')
+  return `${prefix}.${basename}`
+}
+
+/**
+ * Extract PureScript code from a Vue SFC.
+ * If no `module` declaration is present, one is generated from the file path.
+ */
+export function extract(
+  sfcContent: string,
+  filePath?: string,
+  modulePrefix: string = 'Pue',
+): ExtractResult | null {
   const match = PURS_LANG_RE.exec(sfcContent)
   if (!match) return null
 
-  const code = match[1]
-  const modMatch = MODULE_NAME_RE.exec(code)
-  if (!modMatch) return null
+  const raw = match[1]
+  const modMatch = MODULE_NAME_RE.exec(raw)
 
-  return { moduleName: modMatch[1], code, fullMatch: match[0] }
+  let moduleName: string
+  let code: string
+
+  if (modMatch) {
+    moduleName = modMatch[1]
+    code = raw
+  } else if (filePath) {
+    moduleName = moduleNameFromPath(filePath, modulePrefix)
+    code = `module ${moduleName} where\n${raw}`
+  } else {
+    return null
+  }
+
+  return { moduleName, code, fullMatch: match[0] }
 }
 
 /**
@@ -65,6 +91,7 @@ export function scanAndExtract(
   root: string,
   srcDirs: string[],
   moduleMap: Map<string, string>,
+  modulePrefix: string,
 ): boolean {
   const absDirs = srcDirs.map(d => path.join(root, d))
   const vueFiles = findVueFiles(absDirs)
@@ -72,7 +99,7 @@ export function scanAndExtract(
 
   for (const file of vueFiles) {
     const content = fs.readFileSync(file, 'utf-8')
-    const result = extract(content)
+    const result = extract(content, file, modulePrefix)
     if (result) {
       writePursFile(root, result.moduleName, result.code)
       moduleMap.set(result.moduleName, file)

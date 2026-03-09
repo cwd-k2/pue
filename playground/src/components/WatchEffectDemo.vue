@@ -8,18 +8,19 @@
 </template>
 
 <script lang="purs">
-module Pue.WatchEffectDemo where
-
 import Prelude
-import Effect (Effect)
+
 import Pue (Ref, ref, readRef, writeRef, modifyRef, watchEffect)
 
 setup = do
-  count <- ref 0
+  count  <- ref 0
   parity <- ref "even"
+
   _ <- watchEffect do
     c <- readRef count
     writeRef (if mod c 2 == 0 then "even" else "odd") parity
+
   let increment = modifyRef (_ + 1) count
+
   pure { count, parity, increment }
 </script>

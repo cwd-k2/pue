@@ -8,18 +8,19 @@
 </template>
 
 <script lang="purs">
-module Pue.MountedDemo where
-
 import Prelude
-import Pue (Ref, ref, readRef, writeRef, useTemplateRef, onMounted)
-import Effect (Effect)
+
+import Pue (Ref, ref, writeRef, useTemplateRef, onMounted)
 
 setup = do
-  name <- ref ""
+  name     <- ref ""
   greeting <- ref ""
+
   nameInput <- useTemplateRef "nameInput"
+
   onMounted do
     writeRef "Hello, world!" greeting
+
   pure { name, greeting, nameInput }
 </script>
 

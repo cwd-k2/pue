@@ -6,7 +6,7 @@
 </template>
 
 <script lang="purs">
-module Pue.Greeting where
+import Prelude
 
 message :: String
 message = "Hello from pure PureScript — no Effect needed!"

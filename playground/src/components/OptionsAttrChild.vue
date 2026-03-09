@@ -6,9 +6,8 @@
 </template>
 
 <script lang="purs">
-module Pue.OptionsAttrChild where
-
 import Prelude
+
 import Pue (useAttrs)
 
 options = { inheritAttrs: false }

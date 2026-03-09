@@ -7,15 +7,16 @@
 </template>
 
 <script lang="purs">
-module Pue.ErrorBoundary where
-
 import Prelude
+
 import Pue (Ref, ref, writeRef, onErrorCaptured)
 
 setup = do
   error <- ref ""
-  onErrorCaptured \err -> do
+
+  onErrorCaptured \_ -> do
     writeRef "Something went wrong!" error
     pure true
+
   pure { error }
 </script>

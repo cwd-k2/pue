@@ -7,9 +7,8 @@
 </template>
 
 <script lang="purs">
-module Pue.IdDemo where
-
 import Prelude
+
 import Pue (useId)
 
 setup = do

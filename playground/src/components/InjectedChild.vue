@@ -3,9 +3,8 @@
 </template>
 
 <script lang="purs">
-module Pue.InjectedChild where
-
 import Prelude
+
 import Pue (inject)
 
 setup = do

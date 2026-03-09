@@ -10,22 +10,24 @@
 </template>
 
 <script lang="purs">
-module Pue.LifecycleDemo where
-
 import Prelude
-import Effect (Effect)
+
 import Pue (Ref, ref, modifyRef, onBeforeMount, onMounted, onBeforeUpdate, onUpdated, onBeforeUnmount, onUnmounted)
 
 setup = do
   count <- ref 0
-  log <- ref ([] :: Array String)
-  let push msg = modifyRef (\xs -> xs <> [msg]) log
-  onBeforeMount (push "beforeMount")
-  onMounted (push "mounted")
+  log   <- ref ([] :: Array String)
+
+  let push msg = modifyRef (_ <> [msg]) log
+
+  onBeforeMount  (push "beforeMount")
+  onMounted      (push "mounted")
   onBeforeUpdate (push "beforeUpdate")
-  onUpdated (push "updated")
+  onUpdated      (push "updated")
   onBeforeUnmount (push "beforeUnmount")
-  onUnmounted (push "unmounted")
+  onUnmounted    (push "unmounted")
+
   let increment = modifyRef (_ + 1) count
+
   pure { count, log, increment }
 </script>

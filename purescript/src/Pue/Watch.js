@@ -6,6 +6,9 @@ export const watch = (source) => (callback) => () =>
 export const watchImmediate = (source) => (callback) => () =>
   Vue.watch(source, (newVal, oldVal) => { callback(newVal)(oldVal)(); }, { immediate: true });
 
+export const watchOnce = (source) => (callback) => () =>
+  Vue.watch(source, (newVal, oldVal) => { callback(newVal)(oldVal)(); }, { once: true });
+
 export const watchWith = (source) => (callback) => () =>
   Vue.watch(source, (newVal, oldVal, onCleanup) => {
     callback(newVal)(oldVal)((cleanup) => () => onCleanup(cleanup))();

@@ -3,9 +3,8 @@
 </template>
 
 <script lang="purs">
-module Pue.ExposeChild where
-
 import Prelude
+
 import Effect (Effect)
 import Pue (DefineExpose, defineExpose, Ref, ref, modifyRef)
 

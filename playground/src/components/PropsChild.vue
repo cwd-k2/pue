@@ -9,9 +9,8 @@
 </template>
 
 <script lang="purs">
-module Pue.PropsChild where
-
 import Prelude
+
 import Pue (DefineProps, defineProps, DefineEmits, defineEmits, Ref, toRef)
 
 props :: DefineProps { msg :: String, count :: Int }
@@ -22,7 +21,9 @@ emits = defineEmits
 
 setup p emit = do
   countRef <- toRef @"count" p
+
   let doubled = (_ * 2) <$> countRef
-  let notify = emit "notify" unit
+  let notify  = emit "notify" unit
+
   pure { doubled, notify }
 </script>

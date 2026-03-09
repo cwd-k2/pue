@@ -8,15 +8,15 @@
 </template>
 
 <script lang="purs">
-module Pue.Counter where
-
 import Prelude
-import Effect (Effect)
+
 import Pue (Ref, ref, modifyRef)
 
 setup = do
   count <- ref 0
+
   let increment = modifyRef (_ + 1) count
   let decrement = modifyRef (_ - 1) count
+
   pure { count, increment, decrement }
 </script>

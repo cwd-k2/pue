@@ -9,11 +9,9 @@
 </template>
 
 <script lang="purs">
-module Pue.CustomRefDemo where
-
 import Prelude
+
 import Pue (Ref, ref, readRef, writeRef, modifyRef, customRef)
-import Effect (Effect)
 
 clamp :: Int -> Int -> Int -> Int
 clamp lo hi x
@@ -23,12 +21,15 @@ clamp lo hi x
 
 setup = do
   inner <- ref 50
+
   clamped <- customRef \track trigger ->
     { get: track *> readRef inner
     , set: \v -> writeRef (clamp 0 100 v) inner *> trigger
     }
+
   let inc = modifyRef (_ + 10) clamped
   let dec = modifyRef (_ - 10) clamped
+
   pure { clamped, inc, dec }
 </script>
 

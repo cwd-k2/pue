@@ -9,19 +9,20 @@
 </template>
 
 <script lang="purs">
-module Pue.WatchPostDemo where
-
 import Prelude
+
 import Pue (Ref, ref, readRef, writeRef, modifyRef, watchPostEffect)
-import Effect (Effect)
 
 setup = do
-  count <- ref 0
+  count  <- ref 0
   synced <- ref 0
+
   _ <- watchPostEffect do
     c <- readRef count
     writeRef c synced
+
   let increment = modifyRef (_ + 1) count
+
   pure { count, synced, increment }
 </script>
 

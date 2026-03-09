@@ -7,10 +7,8 @@
 </template>
 
 <script lang="purs">
-module Pue.OptionsDemo where
-
 import Prelude
-import Effect (Effect)
+
 import Pue (Ref, ref, modifyRef)
 
 setup = do

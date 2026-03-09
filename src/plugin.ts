@@ -16,6 +16,7 @@ export function pue(options: PueOptions = {}): Plugin {
   const srcDirs = options.srcDirs ?? ['src']
   const pursCommand = options.pursCommand ?? 'spago build'
   const debug = options.debug ?? false
+  const modulePrefix = options.modulePrefix ?? 'Pue'
 
   let root: string
   let server: ViteDevServer | undefined
@@ -113,7 +114,7 @@ export function pue(options: PueOptions = {}): Plugin {
 
     buildStart() {
       ensureSpagoSources()
-      if (scanAndExtract(root, srcDirs, moduleMap)) {
+      if (scanAndExtract(root, srcDirs, moduleMap, modulePrefix)) {
         const result = compileSync(root, pursCommand)
         if (!result.success) {
           const errors = remapErrors(result.stderr, moduleMap)
@@ -127,7 +128,7 @@ export function pue(options: PueOptions = {}): Plugin {
     transform(code, id) {
       if (!id.endsWith('.vue')) return null
 
-      const result = extract(code)
+      const result = extract(code, id, modulePrefix)
       if (!result) return null
 
       const { moduleName, code: pursCode, fullMatch } = result
@@ -151,7 +152,7 @@ export function pue(options: PueOptions = {}): Plugin {
       if (!ctx.file.endsWith('.vue')) return
 
       const content = await ctx.read()
-      const result = extract(content)
+      const result = extract(content, ctx.file, modulePrefix)
       if (!result) return
 
       writePursFile(root, result.moduleName, result.code)
@@ -165,7 +166,6 @@ export function pue(options: PueOptions = {}): Plugin {
 
         server?.config.logger.error(`[pue] Compilation failed:\n${message}`)
 
-        // Send error overlay to browser
         server?.ws.send({
           type: 'error',
           err: {
@@ -180,9 +180,8 @@ export function pue(options: PueOptions = {}): Plugin {
 
       log(`recompiled: ${result.moduleName}`)
 
-      // Invalidate all modules that depend on pue-compiled output
       const invalidated: import('vite').ModuleNode[] = []
-      for (const [mod, file] of moduleMap) {
+      for (const [, file] of moduleMap) {
         const modules = server?.moduleGraph.getModulesByFile(file)
         if (modules) {
           for (const m of modules) {

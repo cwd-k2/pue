@@ -9,22 +9,22 @@
 </template>
 
 <script lang="purs">
-module Pue.KeepAliveChild where
-
 import Prelude
-import Effect (Effect)
-import Pue (Ref, ref, modifyRef, onMounted, onUnmounted, onActivated, onDeactivated)
 
-components = [] :: Array String
+import Pue (Ref, ref, modifyRef, onMounted, onUnmounted, onActivated, onDeactivated)
 
 setup = do
   count <- ref 0
-  log <- ref ([] :: Array String)
-  let push msg = modifyRef (\xs -> xs <> [msg]) log
-  onMounted (push "mounted")
-  onUnmounted (push "unmounted")
-  onActivated (push "activated")
+  log   <- ref ([] :: Array String)
+
+  let push msg = modifyRef (_ <> [msg]) log
+
+  onMounted    (push "mounted")
+  onUnmounted  (push "unmounted")
+  onActivated  (push "activated")
   onDeactivated (push "deactivated")
+
   let increment = modifyRef (_ + 1) count
+
   pure { count, log, increment }
 </script>

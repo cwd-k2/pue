@@ -1,5 +1,5 @@
 module Pue.Watch
-  ( watch, watchImmediate, watchWith
+  ( watch, watchImmediate, watchOnce, watchWith
   , watchEffect, watchPostEffect, watchSyncEffect
   ) where
 
@@ -13,6 +13,9 @@ foreign import watch :: forall a. Ref a -> (a -> a -> Effect Unit) -> Effect (Ef
 
 -- | Watch with immediate invocation.
 foreign import watchImmediate :: forall a. Ref a -> (a -> a -> Effect Unit) -> Effect (Effect Unit)
+
+-- | Watch that fires once then auto-stops.
+foreign import watchOnce :: forall a. Ref a -> (a -> a -> Effect Unit) -> Effect (Effect Unit)
 
 -- | Watch with cleanup registration.
 -- | The third callback argument registers a cleanup effect

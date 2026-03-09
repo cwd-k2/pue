@@ -2,8 +2,42 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { readExterns, findPhantomRecord } from './externs'
 
+const VANILLA_SCRIPT_RE = /<script\b(?![^>]*\blang=)[^>]*>([\s\S]*?)<\/script>/
+
+/**
+ * Extract component imports from a vanilla <script> block.
+ */
+function extractVanillaScript(sfcContent: string): {
+  imports: string[]
+  componentNames: string[]
+  fullMatch: string
+} | null {
+  const match = VANILLA_SCRIPT_RE.exec(sfcContent)
+  if (!match) return null
+
+  const content = match[1]
+  const imports: string[] = []
+  const componentNames: string[] = []
+
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+
+    if (trimmed.startsWith('import ')) {
+      imports.push(trimmed)
+      const nameMatch = trimmed.match(/^import\s+(\w+)\s+from\s+/)
+      if (nameMatch) componentNames.push(nameMatch[1])
+    }
+  }
+
+  return imports.length > 0
+    ? { imports, componentNames, fullMatch: match[0] }
+    : null
+}
+
 /**
  * Analyse PureScript source + externs to generate a Vue SFC <script> replacement.
+ * Merges any vanilla <script> imports (component imports) into the generated output.
  */
 export function transformSFC(
   pursCode: string,
@@ -14,40 +48,49 @@ export function transformSFC(
   outputDir: string,
   moduleName: string,
 ): string {
+  // Extract vanilla <script> block for component imports
+  const vanilla = extractVanillaScript(sfcContent)
+  let content = sfcContent
+  if (vanilla) {
+    content = content.replace(vanilla.fullMatch, '')
+  }
+
   if (exports.length === 0) {
-    return sfcContent.replace(fullMatch, `<script>\n/* pue: no exports */\n</script>`)
+    const script = vanilla
+      ? `<script>\n${vanilla.imports.join('\n')}\n/* pue: no exports */\n</script>`
+      : `<script>\n/* pue: no exports */\n</script>`
+    return content.replace(fullMatch, script)
   }
 
   const hasSetup = exports.includes('setup')
   const hasComponent = exports.includes('component')
 
   if (hasComponent) {
-    return sfcContent.replace(
+    return content.replace(
       fullMatch,
       `<script>\nexport { component as default } from '${compiledPath}'\n</script>`,
     )
   }
 
   if (!hasSetup) {
-    const metaExports = new Set(['components', 'expose', 'options', 'slots', 'defaults'])
+    const metaExports = new Set(['expose', 'options', 'slots', 'defaults'])
     const pureExports = exports.filter(e => !metaExports.has(e))
     if (pureExports.length === 0) {
-      return sfcContent.replace(fullMatch, `<script>\nexport default {}\n</script>`)
+      return content.replace(fullMatch, `<script>\nexport default {}\n</script>`)
     }
     const lines = [
       `import { ${pureExports.join(', ')} } from '${compiledPath}'`,
       `export default { setup() { return { ${pureExports.join(', ')} } } }`,
     ]
-    return sfcContent.replace(fullMatch, `<script>\n${lines.join('\n')}\n</script>`)
+    return content.replace(fullMatch, `<script>\n${lines.join('\n')}\n</script>`)
   }
 
   // --- Setup-based component ---
   const lines: string[] = []
 
-  // Components
-  const components = extractStringArray(pursCode, 'components')
-  if (components) {
-    for (const c of components) lines.push(`import ${c} from './${c}.vue'`)
+  // Component imports from vanilla <script>
+  if (vanilla) {
+    for (const imp of vanilla.imports) lines.push(imp)
   }
 
   // Analyse props/emits/model/expose via externs (primary) + regex (fallback)
@@ -79,14 +122,16 @@ export function transformSFC(
   // Determine which exports are metadata vs user bindings
   const fields = extractRecordFields(pursCode)
   const fieldSet = new Set(fields ?? [])
-  const metaExports = new Set(['setup', 'props', 'emits', 'model', 'components', 'expose', 'options', 'slots', 'defaults'])
+  const metaExports = new Set(['setup', 'props', 'emits', 'model', 'expose', 'options', 'slots', 'defaults'])
   const pureExports = exports.filter(e => !metaExports.has(e) && !fieldSet.has(e))
 
   const importNames = ['setup as __pue_setup', ...pureExports]
   lines.push(`import { ${importNames.join(', ')} } from '${compiledPath}'`)
 
   const options: string[] = []
-  if (components) options.push(`components: { ${components.join(', ')} }`)
+  if (vanilla && vanilla.componentNames.length > 0) {
+    options.push(`components: { ${vanilla.componentNames.join(', ')} }`)
+  }
   if (exposeMap) options.push(`expose: ${JSON.stringify(Object.keys(exposeMap))}`)
   if (optionsRecord) options.push(optionsRecord)
 
@@ -129,7 +174,7 @@ export function transformSFC(
   }
 
   lines.push(`export default { ${options.join(', ')} }`)
-  return sfcContent.replace(fullMatch, `<script>\n${lines.join('\n')}\n</script>`)
+  return content.replace(fullMatch, `<script>\n${lines.join('\n')}\n</script>`)
 }
 
 // --- Regex-based extraction (for runtime values and fallback) ---
@@ -202,7 +247,6 @@ function countSetupArgs(source: string): number {
 }
 
 function extractRecordFields(pursSource: string): string[] | null {
-  // Inline: setup :: Effect { field :: Type, ... }
   const inlineRe = /setup\s*::[\s\S]*?\{/
   const inlineMatch = inlineRe.exec(pursSource)
   if (inlineMatch) {
@@ -212,7 +256,6 @@ function extractRecordFields(pursSource: string): string[] | null {
     }
   }
 
-  // Named: setup :: Effect TypeName
   const namedRe = /setup\s*::\s*(?:Effect\s+)([A-Z]\w*)/
   const namedMatch = namedRe.exec(pursSource)
   if (namedMatch) {
@@ -224,7 +267,6 @@ function extractRecordFields(pursSource: string): string[] | null {
     }
   }
 
-  // Fallback: pure { field1, field2, ... }
   const pureRe = /pure\s*\{([^}]+)\}/
   const pureMatch = pureRe.exec(pursSource)
   if (pureMatch) {

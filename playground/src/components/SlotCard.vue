@@ -6,9 +6,8 @@
 </template>
 
 <script lang="purs">
-module Pue.SlotCard where
-
 import Prelude
+
 import Pue (DefineSlots, defineSlots, ref, modifyRef)
 
 slots :: DefineSlots { title :: {} }

@@ -11,20 +11,21 @@
 </template>
 
 <script lang="purs">
-module Pue.MultiModelChild where
-
 import Prelude
+
 import Pue (DefineModel, defineModel, Ref, toRef)
 
 model :: DefineModel { title :: String, content :: String }
 model = defineModel
 
 setup p emit = do
-  titleRef <- toRef @"title" p
+  titleRef   <- toRef @"title" p
   contentRef <- toRef @"content" p
-  let combined = (\t c -> t <> ": " <> c) <$> titleRef <*> contentRef
-  let updateTitle = emit "update:title"
+
+  let combined      = (\t c -> t <> ": " <> c) <$> titleRef <*> contentRef
+  let updateTitle   = emit "update:title"
   let updateContent = emit "update:content"
+
   pure { combined, updateTitle, updateContent }
 </script>
 

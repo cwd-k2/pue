@@ -7,19 +7,15 @@
 </template>
 
 <script lang="purs">
-module Pue.Toggle where
-
 import Prelude
-import Effect (Effect)
-import Pue (Ref, ref, readRef, writeRef, computed)
+
+import Pue (Ref, ref, modifyRef)
 
 setup = do
   on <- ref true
-  label <- computed do
-    v <- readRef on
-    pure (if v then "ON" else "OFF")
-  let toggle = do
-        v <- readRef on
-        writeRef (not v) on
+
+  let label  = (\v -> if v then "ON" else "OFF") <$> on
+  let toggle = modifyRef not on
+
   pure { on, label, toggle }
 </script>

@@ -1,6 +1,6 @@
 module Pue.Ref
   ( Ref
-  , ref, shallowRef, computed, customRef
+  , ref, shallowRef, computed, computedGetSet, customRef
   , readRef
   , writeRef, modifyRef, triggerRef
   , readonly
@@ -60,6 +60,7 @@ instance BooleanAlgebra a => BooleanAlgebra (Ref a)
 foreign import ref :: forall a. a -> Effect (Ref a)
 foreign import shallowRef :: forall a. a -> Effect (Ref a)
 foreign import computed :: forall a. Effect a -> Effect (Ref a)
+foreign import computedGetSet :: forall a. Effect a -> (a -> Effect Unit) -> Effect (Ref a)
 foreign import customRef :: forall a. (Effect Unit -> Effect Unit -> { get :: Effect a, set :: a -> Effect Unit }) -> Effect (Ref a)
 
 -- Read

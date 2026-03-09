@@ -6,13 +6,14 @@
   </div>
 </template>
 
+<script>
+import InjectedChild from './InjectedChild.vue'
+</script>
+
 <script lang="purs">
-module Pue.ProvideInject where
-
 import Prelude
-import Pue (provide)
 
-components = ["InjectedChild"]
+import Pue (provide)
 
 setup = do
   provide @"theme" "dark"

@@ -29,7 +29,7 @@
     <h3>Lifecycle Hooks</h3>
     <div class="grid">
       <MountedDemo />
-      <Lifecycle />
+      <LifecycleDemo />
       <KeepAliveDemo />
     </div>
 
@@ -98,7 +98,7 @@ import WatchDemo from './components/WatchDemo.vue'
 import WatchEffectDemo from './components/WatchEffectDemo.vue'
 import WatchPostDemo from './components/WatchPostDemo.vue'
 import MountedDemo from './components/MountedDemo.vue'
-import Lifecycle from './components/Lifecycle.vue'
+import LifecycleDemo from './components/LifecycleDemo.vue'
 import KeepAliveDemo from './components/KeepAliveDemo.vue'
 import ProvideInject from './components/ProvideInject.vue'
 import PropsDemo from './components/PropsDemo.vue'
@@ -118,7 +118,7 @@ import OptionsAttrDemo from './components/OptionsAttrDemo.vue'
 const components = [
   'Counter', 'DoubleCounter', 'Fibonacci', 'Toggle', 'Stepper',
   'Temperature', 'Collatz', 'GCD', 'WatchDemo', 'WatchEffectDemo',
-  'WatchPostDemo', 'MountedDemo', 'Lifecycle', 'KeepAliveDemo',
+  'WatchPostDemo', 'MountedDemo', 'LifecycleDemo', 'KeepAliveDemo',
   'ProvideInject', 'PropsDemo', 'ModelDemo', 'MultiModelDemo',
   'ExposeDemo', 'SlotDemo', 'TemplateRefDemo', 'CustomRefDemo',
   'IdDemo', 'ScopeDemo', 'ErrorDemo',

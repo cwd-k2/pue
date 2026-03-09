@@ -7,9 +7,8 @@
 </template>
 
 <script lang="purs">
-module Pue.TemplateRefDemo where
-
 import Prelude
+
 import Pue (useTemplateRef)
 
 setup = do

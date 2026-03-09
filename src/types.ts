@@ -3,6 +3,7 @@ export interface PueOptions {
   srcDirs?: string[]
   pursCommand?: string
   debug?: boolean
+  modulePrefix?: string
 }
 
 export interface ExtractResult {
