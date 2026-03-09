@@ -5,7 +5,12 @@
 Vue reactivity bindings for PureScript. Import in your `<script lang="purs">` blocks.
 
 ```purescript
-import Pue (Ref, ref, readRef, writeRef, modifyRef, computed, onMounted, onUnmounted)
+import Pue
+  ( Ref, ref, readRef, writeRef, modifyRef
+  , computed, watch, watchEffect
+  , onBeforeMount, onMounted, onBeforeUpdate, onUpdated, onBeforeUnmount, onUnmounted
+  , provide, inject, nextTick, shallowRef
+  )
 ```
 
 ### Types
@@ -29,7 +34,7 @@ name  <- ref "hello"
 
 #### `readRef :: forall a. Ref a -> Effect a`
 
-Read the current value of a ref. Use inside `computed` or other effects to establish reactive dependencies.
+Read the current value of a ref. Use inside `computed` or `watchEffect` to establish reactive dependencies.
 
 ```purescript
 value <- readRef count
@@ -52,6 +57,10 @@ modifyRef (_ + 1) count   -- increment
 modifyRef not toggle      -- flip boolean
 ```
 
+#### `shallowRef :: forall a. a -> Effect (Ref a)`
+
+Create a ref that does not deeply track nested values. Only `.value` replacement triggers reactivity.
+
 ### Computed
 
 #### `computed :: forall a. Effect a -> Effect (Ref a)`
@@ -66,35 +75,91 @@ doubled <- computed do
 
 The getter (the `Effect a` argument) is called by Vue's reactivity system whenever its dependencies change. Reading a `Ref` inside the getter establishes a dependency.
 
-### Lifecycle
+### Watchers
+
+#### `watch :: forall a. Ref a -> (a -> a -> Effect Unit) -> Effect Unit`
+
+Watch a specific ref and run a callback when it changes.
+
+```purescript
+watch count \newVal oldVal ->
+  modifyRef (\xs -> xs <> [show oldVal <> " → " <> show newVal]) history
+```
+
+#### `watchEffect :: Effect Unit -> Effect Unit`
+
+Run an effect that automatically tracks which refs it reads. Re-runs whenever any tracked ref changes.
+
+```purescript
+watchEffect do
+  c <- readRef count
+  writeRef (if mod c 2 == 0 then "even" else "odd") parity
+```
+
+### Lifecycle hooks
+
+#### `onBeforeMount :: Effect Unit -> Effect Unit`
+
+Runs before the component is mounted to the DOM.
 
 #### `onMounted :: Effect Unit -> Effect Unit`
 
-Register a callback to run after the component is mounted to the DOM.
+Runs after the component is mounted to the DOM.
 
 ```purescript
 onMounted do
-  log "Component mounted"
+  writeRef true mounted
 ```
+
+#### `onBeforeUpdate :: Effect Unit -> Effect Unit`
+
+Runs before the component re-renders due to reactive state changes.
+
+#### `onUpdated :: Effect Unit -> Effect Unit`
+
+Runs after the component re-renders.
+
+#### `onBeforeUnmount :: Effect Unit -> Effect Unit`
+
+Runs before the component is removed from the DOM.
 
 #### `onUnmounted :: Effect Unit -> Effect Unit`
 
-Register a cleanup callback for when the component is removed.
+Runs after the component is removed from the DOM.
+
+### Dependency injection
+
+#### `provide :: forall a. String -> a -> Effect Unit`
+
+Provide a value to descendant components via a string key.
 
 ```purescript
-onUnmounted do
-  log "Component destroyed"
+provide "theme" "dark"
 ```
+
+#### `inject :: forall a. String -> a -> Effect a`
+
+Inject a value provided by an ancestor component. Returns the default if not provided.
+
+```purescript
+theme <- inject "theme" "default"
+```
+
+### Async
+
+#### `nextTick :: Effect Unit -> Effect Unit`
+
+Run a callback after the next DOM update cycle.
 
 ## The `setup` convention
 
-To expose bindings to Vue templates, export a `setup` function returning a record wrapped in `Effect`:
+Export a `setup` function that returns a record wrapped in `Effect`. The plugin extracts field names from the `pure { ... }` expression — no type annotation needed:
 
 ```purescript
-setup :: Effect { fieldName :: FieldType, ... }
 setup = do
-  -- initialization
-  pure { fieldName: value, ... }
+  count <- ref 0
+  let increment = modifyRef (_ + 1) count
+  pure { count, increment }
 ```
 
 **Record field types and their template behavior:**

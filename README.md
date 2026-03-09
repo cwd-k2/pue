@@ -14,10 +14,8 @@ Write PureScript in Vue Single File Components.
 module App.Counter where
 
 import Prelude
-import Effect (Effect)
 import Pue (Ref, ref, modifyRef)
 
-setup :: Effect { count :: Ref Int, increment :: Effect Unit }
 setup = do
   count <- ref 0
   let increment = modifyRef (_ + 1) count
@@ -33,7 +31,11 @@ PureScript's type system meets Vue's reactivity. No code generation, no separate
 npm install pue purescript spago
 ```
 
-## Setup
+## Quick start
+
+```bash
+npx pue init          # creates spago.dhall, packages.dhall, .gitignore
+```
 
 **vite.config.ts**
 
@@ -47,16 +49,6 @@ export default defineConfig({
 })
 ```
 
-**spago.dhall** (in your project root)
-
-```dhall
-{ name = "my-app"
-, dependencies = [ "effect", "prelude" ]
-, packages = ./packages.dhall
-, sources = [ "src/**/*.purs" ]
-}
-```
-
 The plugin automatically adds `.pue/**/*.purs` and pue library sources to your spago config on first build.
 
 ## How it works
@@ -68,29 +60,49 @@ The plugin automatically adds `.pue/**/*.purs` and pue library sources to your s
 
 ### The `setup` convention
 
-Export a function named `setup` that returns an `Effect` of a record. The record fields become your template bindings:
+Export a `setup` function that returns a record via `pure { ... }`. Field names are extracted automatically — no type annotation needed:
 
 ```purescript
-setup :: Effect { count :: Ref Int, increment :: Effect Unit }
+setup = do
+  count <- ref 0
+  let increment = modifyRef (_ + 1) count
+  pure { count, increment }
 ```
 
 - **`Ref a`** → Vue's `ref()` — reactive values, auto-unwrapped in templates
 - **`Effect Unit`** → `() => void` — event handlers (`@click`, etc.)
-- **`Effect a`** → thunks — PureScript's `Effect` compiles to `() => a`, which naturally aligns with Vue's `computed()`, `onMounted()`, etc.
+- **`Effect a`** → PureScript's `Effect` compiles to `() => a`, naturally aligning with Vue's `computed()`, `onMounted()`, etc.
 
 ## API
 
-The `Pue` module provides Vue reactivity bindings for PureScript:
+The `Pue` module provides Vue bindings for PureScript:
 
 ```purescript
-ref        :: forall a. a -> Effect (Ref a)
-readRef    :: forall a. Ref a -> Effect a
-writeRef   :: forall a. a -> Ref a -> Effect Unit
-modifyRef  :: forall a. (a -> a) -> Ref a -> Effect Unit
-computed   :: forall a. Effect a -> Effect (Ref a)
-onMounted  :: Effect Unit -> Effect Unit
-onUnmounted :: Effect Unit -> Effect Unit
+-- Reactivity
+ref         :: forall a. a -> Effect (Ref a)
+readRef     :: forall a. Ref a -> Effect a
+writeRef    :: forall a. a -> Ref a -> Effect Unit
+modifyRef   :: forall a. (a -> a) -> Ref a -> Effect Unit
+computed    :: forall a. Effect a -> Effect (Ref a)
+shallowRef  :: forall a. a -> Effect (Ref a)
+
+-- Watchers
+watch       :: forall a. Ref a -> (a -> a -> Effect Unit) -> Effect Unit
+watchEffect :: Effect Unit -> Effect Unit
+
+-- Lifecycle
+onBeforeMount, onMounted, onBeforeUpdate, onUpdated,
+onBeforeUnmount, onUnmounted :: Effect Unit -> Effect Unit
+
+-- Dependency injection
+provide     :: forall a. String -> a -> Effect Unit
+inject      :: forall a. String -> a -> Effect a
+
+-- Async
+nextTick    :: Effect Unit -> Effect Unit
 ```
+
+See [docs/api.md](docs/api.md) for full reference.
 
 ## Both APIs
 
@@ -104,11 +116,13 @@ The module is wrapped as a Vue component options object with a `setup()` method.
 
 ## Editor support
 
-- **[Neovim](docs/editor.md#neovim)** — Tree-sitter injection for PureScript highlighting + LSP config
-- **[VSCode](docs/editor.md#vscode)** — TextMate grammar injection extension
-- **[Volar](docs/editor.md#volar)** — Language plugin for Vue language tools
+```bash
+npx pue editor neovim   # tree-sitter injection + LSP instructions
+npx pue editor vscode   # syntax extension
+npx pue editor volar    # Volar integration
+```
 
-See [docs/editor.md](docs/editor.md) for setup instructions.
+See [docs/editor.md](docs/editor.md) for details.
 
 ## Documentation
 
