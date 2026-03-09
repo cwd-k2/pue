@@ -15,6 +15,6 @@ import Pue (provide)
 components = ["InjectedChild"]
 
 setup = do
-  provide "theme" "dark"
+  provide @"theme" "dark"
   pure {}
 </script>

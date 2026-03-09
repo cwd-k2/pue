@@ -1,1 +1,2 @@
-export { pue, type PueOptions } from './plugin'
+export { pue } from './plugin'
+export type { PueOptions } from './types'

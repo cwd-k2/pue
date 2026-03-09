@@ -10,7 +10,7 @@
 </template>
 
 <script lang="purs">
-module Pue.Lifecycle where
+module Pue.LifecycleDemo where
 
 import Prelude
 import Effect (Effect)

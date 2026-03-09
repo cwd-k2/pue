@@ -20,8 +20,8 @@ model :: DefineModel { title :: String, content :: String }
 model = defineModel
 
 setup p emit = do
-  titleRef <- toRef p "title"
-  contentRef <- toRef p "content"
+  titleRef <- toRef @"title" p
+  contentRef <- toRef @"content" p
   let combined = (\t c -> t <> ": " <> c) <$> titleRef <*> contentRef
   let updateTitle = emit "update:title"
   let updateContent = emit "update:content"

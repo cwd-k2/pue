@@ -21,7 +21,7 @@ emits :: DefineEmits { notify :: Unit }
 emits = defineEmits
 
 setup p emit = do
-  countRef <- toRef p "count"
+  countRef <- toRef @"count" p
   let doubled = (_ * 2) <$> countRef
   let notify = emit "notify" unit
   pure { doubled, notify }

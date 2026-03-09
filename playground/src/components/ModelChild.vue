@@ -16,7 +16,7 @@ model :: DefineModel { modelValue :: Int }
 model = defineModel
 
 setup p emit = do
-  modelRef <- toRef p "modelValue"
+  modelRef <- toRef @"modelValue" p
   let increment = do
         c <- readRef modelRef
         emit "update:modelValue" (c + 1)
