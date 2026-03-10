@@ -1,6 +1,6 @@
 -- | FFI module wrapping vue-router for use in PureScript components.
 -- | Demonstrates the pattern for integrating any Vue ecosystem library.
-module App.Router
+module Lib.Router
   ( Router
   , useRouter
   , push, back

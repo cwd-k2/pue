@@ -11,12 +11,7 @@
 import Prelude
 
 import Pue (Ref, ref, readRef, writeRef, modifyRef)
-
-collatzStep :: Int -> Int
-collatzStep n
-  | n <= 1       = 1
-  | mod n 2 == 0 = n / 2
-  | otherwise    = 3 * n + 1
+import Lib.Numeric (collatzStep)
 
 setup = do
   current <- ref 27

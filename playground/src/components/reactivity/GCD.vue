@@ -13,10 +13,7 @@ import Prelude
 
 import Control.Apply (lift2)
 import Pue (Ref, ref, writeRef, modifyRef)
-
-gcd' :: Int -> Int -> Int
-gcd' a 0 = a
-gcd' a b = gcd' b (mod a b)
+import Lib.Numeric (gcd')
 
 setup = do
   a <- ref 12

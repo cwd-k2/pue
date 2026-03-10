@@ -8,7 +8,7 @@
     <button @click="goBack">← Back</button>
     <p class="meta">
       Programmatic navigation via PureScript FFI —
-      see <code>src/Router.purs</code> + <code>src/Router.js</code>
+      see <code>src/Lib/Router.purs</code> + <code>src/Lib/Router.js</code>
     </p>
   </div>
 </template>
@@ -16,7 +16,7 @@
 <script lang="purs">
 import Prelude
 
-import App.Router (useRouter, push, back)
+import Lib.Router (useRouter, push, back)
 
 setup = do
   router <- useRouter

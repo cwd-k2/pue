@@ -13,11 +13,12 @@
 import Prelude
 
 import Pue (ref, focus, modifyRef)
+import Lib.Temperature (toFahrenheit, toCelsius)
 
 setup = do
   celsius <- ref 20
 
-  let fahrenheit = focus (\c -> c * 9 / 5 + 32) (\f -> (f - 32) * 5 / 9) celsius
+  let fahrenheit = focus toFahrenheit toCelsius celsius
 
   let hotterC = modifyRef (_ + 5) celsius
   let coolerC = modifyRef (_ - 5) celsius

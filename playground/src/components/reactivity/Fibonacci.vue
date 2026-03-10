@@ -11,12 +11,7 @@
 import Prelude
 
 import Pue (Ref, ref, writeRef, modifyRef)
-
-fib :: Int -> Int
-fib n = go n 0 1
-  where
-  go 0 a _ = a
-  go k a b = go (k - 1) b (a + b)
+import Lib.Numeric (fib)
 
 setup = do
   n <- ref 0
