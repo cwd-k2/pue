@@ -24,11 +24,15 @@
       <WatchDemo />
       <WatchEffectDemo />
       <WatchPostDemo />
+      <WatchMultiDemo />
+      <WatchControlDemo />
+      <WatchOnceDemo />
     </div>
 
     <h3>EffectScope</h3>
     <div class="grid">
       <ScopeDemo />
+      <DetachedScopeDemo />
     </div>
 
     <h3>Lifecycle Hooks</h3>
@@ -100,7 +104,11 @@ import GCD from './components/reactivity/GCD.vue'
 import WatchDemo from './components/watch/WatchDemo.vue'
 import WatchEffectDemo from './components/watch/WatchEffectDemo.vue'
 import WatchPostDemo from './components/watch/WatchPostDemo.vue'
+import WatchMultiDemo from './components/watch/WatchMultiDemo.vue'
+import WatchControlDemo from './components/watch/WatchControlDemo.vue'
+import WatchOnceDemo from './components/watch/WatchOnceDemo.vue'
 import ScopeDemo from './components/watch/ScopeDemo.vue'
+import DetachedScopeDemo from './components/watch/DetachedScopeDemo.vue'
 
 // Lifecycle
 import MountedDemo from './components/lifecycle/MountedDemo.vue'
@@ -133,7 +141,8 @@ import OptionsAttrDemo from './components/misc/OptionsAttrDemo.vue'
 const components = [
   'Counter', 'DoubleCounter', 'Fibonacci', 'Toggle', 'Stepper',
   'Temperature', 'Collatz', 'GCD', 'WatchDemo', 'WatchEffectDemo',
-  'WatchPostDemo', 'ScopeDemo', 'MountedDemo', 'LifecycleDemo',
+  'WatchPostDemo', 'WatchMultiDemo', 'WatchControlDemo', 'WatchOnceDemo',
+  'ScopeDemo', 'DetachedScopeDemo', 'MountedDemo', 'LifecycleDemo',
   'KeepAliveDemo', 'ProvideInject', 'PropsDemo', 'ModelDemo',
   'MultiModelDemo', 'ExposeDemo', 'SlotDemo', 'TemplateRefDemo',
   'CustomRefDemo', 'IdDemo', 'ErrorDemo',
