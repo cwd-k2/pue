@@ -215,4 +215,38 @@ formatCount n = show n <> " clicks"
       null,
       2,
     ) + '\n',
+
+  nvimLua: () => `-- pue: PureScript in Vue SFCs
+-- Requires: nvim-treesitter, nvim-lspconfig, purescript-language-server, purs-tidy
+
+-- Tree-sitter injection: highlight <script lang="purs"> as PureScript
+vim.treesitter.query.set("vue", "injections", [[
+;; extends
+((script_element
+  (start_tag
+    (attribute
+      (attribute_name) @_attr
+      (quoted_attribute_value
+        (attribute_value) @_lang)))
+  (raw_text) @injection.content)
+  (#eq? @_attr "lang")
+  (#eq? @_lang "purs")
+  (#set! injection.language "purescript"))
+]])
+
+-- LSP: purescript-language-server
+local ok, lspconfig = pcall(require, "lspconfig")
+if ok then
+  lspconfig.purescriptls.setup({
+    cmd = { "purescript-language-server", "--stdio" },
+    root_dir = lspconfig.util.root_pattern("spago.dhall", "spago.yaml"),
+    settings = {
+      purescript = {
+        formatter = "purs-tidy",
+        addSpagoSources = true,
+      },
+    },
+  })
+end
+`,
 }

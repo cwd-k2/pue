@@ -96,57 +96,29 @@ Done.
 // ─── pue editor neovim ────────────────────────
 
 function editorNeovim() {
-  const nvimDir = path.join(
-    process.env.XDG_CONFIG_HOME ?? path.join(process.env.HOME!, '.config'),
-    'nvim',
-  )
-  const targetDir = path.join(nvimDir, 'after', 'queries', 'vue')
-  const targetFile = path.join(targetDir, 'injections.scm')
-  const sourceFile = path.join(
-    pueRoot,
-    'editor',
-    'neovim',
-    'queries',
-    'vue',
-    'injections.scm',
-  )
-
-  if (!fs.existsSync(sourceFile)) {
-    console.error('Source injection query not found:', sourceFile)
-    process.exit(1)
-  }
-
-  fs.mkdirSync(targetDir, { recursive: true })
+  const targetFile = path.join(process.cwd(), '.nvim.lua')
 
   if (fs.existsSync(targetFile)) {
     const existing = fs.readFileSync(targetFile, 'utf-8')
-    const injection = fs.readFileSync(sourceFile, 'utf-8')
-    if (
-      existing.includes('pue-purescript') ||
-      existing.includes('injection.language "purescript"')
-    ) {
-      console.log('Tree-sitter injection already installed.')
-    } else {
-      fs.writeFileSync(targetFile, existing.trimEnd() + '\n\n' + injection)
-      console.log(`Appended pue injection to ${targetFile}`)
+    if (existing.includes('injection.language "purescript"')) {
+      console.log('.nvim.lua already contains pue config.')
+      return
     }
+    fs.writeFileSync(targetFile, existing.trimEnd() + '\n\n' + tpl.nvimLua())
+    console.log('Appended pue config to .nvim.lua')
   } else {
-    fs.copyFileSync(sourceFile, targetFile)
-    console.log(`Installed ${targetFile}`)
+    fs.writeFileSync(targetFile, tpl.nvimLua())
+    console.log('Created .nvim.lua')
   }
 
   console.log(`
 Neovim setup:
 
-1. Install tree-sitter PureScript parser:
-   :TSInstall purescript
+1. Ensure exrc is enabled:
+   vim.o.exrc = true
 
-2. Add to your init.lua:
-   require("lspconfig").purescriptls.setup({
-     cmd = { "purescript-language-server", "--stdio" },
-     root_dir = require("lspconfig").util.root_pattern("spago.dhall", "spago.yaml"),
-     settings = { purescript = { formatter = "purs-tidy", addSpagoSources = true } },
-   })
+2. Install tree-sitter PureScript parser:
+   :TSInstall purescript
 
 3. Install purescript-language-server if not present:
    npm install -g purescript-language-server purs-tidy
