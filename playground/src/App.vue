@@ -179,6 +179,9 @@ h3 {
   padding: 1.25rem;
   box-shadow: var(--shadow-card);
   transition: box-shadow var(--transition), border-color var(--transition);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 .card:hover {
   border-color: var(--c-border-hover);
@@ -186,38 +189,58 @@ h3 {
 }
 
 .card h2 {
-  margin: 0 0 0.5rem;
+  margin: 0;
   font-size: 1rem;
   font-weight: 600;
   letter-spacing: -0.01em;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--c-border);
 }
 
-.card p { margin: 0.35rem 0; }
+.card p { margin: 0; line-height: 1.5; }
+.card hr {
+  border: none;
+  border-top: 1px solid var(--c-border);
+  margin: 0;
+}
+
+/* ── Values ── */
+
+.card strong {
+  color: var(--c-accent);
+  font-weight: 600;
+}
 
 /* ── Buttons ── */
 
 .card button {
   display: inline-flex;
   align-items: center;
-  margin-right: 0.35rem;
-  margin-bottom: 0.35rem;
-  padding: 0.3rem 0.75rem;
-  font-size: 0.85rem;
+  justify-content: center;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.8rem;
   font-family: inherit;
+  font-weight: 500;
   border: 1px solid var(--c-border);
   border-radius: var(--radius-sm);
   background: var(--c-surface);
-  color: var(--c-text);
+  color: var(--c-text-2);
   cursor: pointer;
-  transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+  transition: all var(--transition);
+  min-width: 2.5rem;
 }
 .card button:hover {
-  border-color: var(--c-border-hover);
-  background: var(--c-bg);
+  border-color: var(--c-accent);
+  color: var(--c-accent);
+  background: var(--c-accent-soft);
 }
 .card button:active {
-  background: var(--c-border);
+  background: var(--c-accent-soft);
+  transform: scale(0.97);
 }
+
+/* button row: adjacent buttons auto-group */
+.card button + button { margin-left: 0.25rem; }
 
 /* ── Inputs ── */
 
@@ -225,13 +248,14 @@ h3 {
 .card textarea,
 .card select {
   font-family: inherit;
-  font-size: 0.9rem;
-  padding: 0.3rem 0.5rem;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.6rem;
   border: 1px solid var(--c-border);
   border-radius: var(--radius-sm);
-  background: var(--c-surface);
+  background: var(--c-bg);
   color: var(--c-text);
   transition: border-color var(--transition), box-shadow var(--transition);
+  max-width: 100%;
 }
 .card input:focus,
 .card textarea:focus,
@@ -239,32 +263,94 @@ h3 {
   outline: none;
   border-color: var(--c-accent);
   box-shadow: 0 0 0 2px var(--c-accent-soft);
+  background: var(--c-surface);
+}
+.card input::placeholder,
+.card textarea::placeholder {
+  color: var(--c-text-3);
+  font-size: 0.85em;
+}
+
+.card label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--c-text-2);
+}
+.card label input,
+.card label textarea {
+  flex: 1;
+  min-width: 0;
+}
+
+.card textarea {
+  resize: vertical;
+  min-height: 2rem;
 }
 
 /* ── Code ── */
 
 code {
   font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-  font-size: 0.85em;
+  font-size: 0.82em;
   background: var(--c-code-bg);
-  padding: 0.15rem 0.35rem;
+  padding: 0.15rem 0.4rem;
   border-radius: 3px;
+  color: var(--c-accent);
+}
+
+pre {
+  font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.8rem;
+  background: var(--c-code-bg);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+  margin: 0;
+  color: var(--c-text-2);
 }
 
 /* ── Lists ── */
 
 .card ul {
-  margin: 0.5rem 0 0;
-  padding-left: 1.25rem;
-  font-size: 0.85rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8rem;
   color: var(--c-text-2);
+  background: var(--c-bg);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  max-height: 9rem;
+  overflow-y: auto;
 }
-.card li { padding: 0.1rem 0; }
+.card li {
+  padding: 0.25rem 0.65rem;
+  border-bottom: 1px solid var(--c-border);
+  font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.78rem;
+}
+.card li:last-child { border-bottom: none; }
 
 /* ── Utility ── */
 
 .meta {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--c-text-3);
+  font-style: italic;
+}
+
+/* ── Slot Card (nested) ── */
+
+.slot-card {
+  border: 1px dashed var(--c-border-hover);
+  border-radius: var(--radius);
+  padding: 0.5rem 1rem;
+}
+.slot-header {
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
 }
 </style>

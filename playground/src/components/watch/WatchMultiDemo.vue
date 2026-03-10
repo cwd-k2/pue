@@ -1,12 +1,8 @@
 <template>
   <div class="card">
     <h2>Multi-source Watch</h2>
-    <p>
-      <label>First: <input :value="first" @input="(e) => setFirst(e.target.value)()" /></label>
-    </p>
-    <p>
-      <label>Last: <input :value="last" @input="(e) => setLast(e.target.value)()" /></label>
-    </p>
+    <label>First <input :value="first" @input="(e) => setFirst(e.target.value)()" /></label>
+    <label>Last <input :value="last" @input="(e) => setLast(e.target.value)()" /></label>
     <p>Full: <strong>{{ full }}</strong></p>
     <ul>
       <li v-for="(entry, i) in log" :key="i">{{ entry }}</li>

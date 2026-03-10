@@ -22,5 +22,5 @@ function onNotify() {
 </script>
 
 <style scoped>
-.notify { color: green; font-weight: bold; }
+.notify { color: var(--c-accent); font-weight: 600; font-size: 0.85rem; }
 </style>

@@ -1,7 +1,7 @@
 <template>
   <div>
     <p>Attrs NOT auto-forwarded:</p>
-    <pre>{{ JSON.stringify(attrs) }}</pre>
+    <pre>{{ JSON.stringify(attrs, null, 2) }}</pre>
   </div>
 </template>
 

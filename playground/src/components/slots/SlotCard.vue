@@ -18,8 +18,3 @@ setup = do
   let increment = modifyRef (_ + 1) count
   pure { count, increment }
 </script>
-
-<style scoped>
-.slot-card { border: 1px dashed #aaa; border-radius: 8px; padding: 0.5rem 1rem; }
-.slot-header { font-weight: bold; margin-bottom: 0.5rem; }
-</style>

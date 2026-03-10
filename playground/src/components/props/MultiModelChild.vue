@@ -1,12 +1,8 @@
 <template>
   <div>
-    <p>
-      <label>Title: <input :value="title" @input="(e) => updateTitle(e.target.value)()" /></label>
-    </p>
-    <p>
-      <label>Content: <textarea :value="content" @input="(e) => updateContent(e.target.value)()" /></label>
-    </p>
-    <p class="preview">Preview: {{ combined }}</p>
+    <label>Title <input :value="title" @input="(e) => updateTitle(e.target.value)()" /></label>
+    <label>Content <textarea :value="content" @input="(e) => updateContent(e.target.value)()" /></label>
+    <p class="meta">{{ combined }}</p>
   </div>
 </template>
 
@@ -28,7 +24,3 @@ setup = do
 
   pure { combined, updateTitle, updateContent }
 </script>
-
-<style scoped>
-.preview { font-style: italic; color: #666; }
-</style>

@@ -1,8 +1,7 @@
 <template>
   <div class="card">
     <h2>useId Demo</h2>
-    <label :for="uid">Name:</label>
-    <input :id="uid" placeholder="Accessible input" />
+    <label :for="uid">Name <input :id="uid" placeholder="Accessible input" /></label>
   </div>
 </template>
 
