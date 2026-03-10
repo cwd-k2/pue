@@ -144,3 +144,41 @@ export function scanAndExtract(
 
   return found
 }
+
+/**
+ * Scan source directories for standalone .purs files and register them
+ * in the module map (for error remapping and HMR).
+ */
+export function scanStandalonePurs(
+  root: string,
+  srcDirs: string[],
+  moduleMap: Map<string, string>,
+): boolean {
+  let found = false
+  for (const srcDir of srcDirs) {
+    const absDir = path.join(root, srcDir)
+    if (walkDirPurs(absDir, moduleMap)) found = true
+  }
+  return found
+}
+
+function walkDirPurs(dir: string, moduleMap: Map<string, string>): boolean {
+  if (!fs.existsSync(dir)) return false
+  let found = false
+
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name)
+    if (entry.isDirectory() && entry.name !== 'node_modules' && !entry.name.startsWith('.')) {
+      if (walkDirPurs(full, moduleMap)) found = true
+    } else if (entry.isFile() && entry.name.endsWith('.purs')) {
+      const content = fs.readFileSync(full, 'utf-8')
+      const modMatch = MODULE_NAME_RE.exec(content)
+      if (modMatch) {
+        moduleMap.set(modMatch[1], full)
+        found = true
+      }
+    }
+  }
+
+  return found
+}

@@ -123,10 +123,11 @@ export function transformSFC(
   // Determine which exports are metadata vs user bindings
   const fields = extractRecordFields(pursCode)
   const fieldSet = new Set(fields ?? [])
-  const metaExports = new Set(['setup', ...extractMacroBindings(pursCode)])
+  const directiveExports = exports.filter(e => /^v[A-Z]/.test(e))
+  const metaExports = new Set(['setup', ...extractMacroBindings(pursCode), ...directiveExports])
   const pureExports = exports.filter(e => !metaExports.has(e) && !fieldSet.has(e))
 
-  const importNames = ['setup as __pue_setup', ...pureExports]
+  const importNames = ['setup as __pue_setup', ...pureExports, ...directiveExports]
   lines.push(`import { ${importNames.join(', ')} } from '${compiledPath}'`)
 
   const options: string[] = []
@@ -135,6 +136,15 @@ export function transformSFC(
   }
   if (exposeMap) options.push(`expose: ${JSON.stringify(Object.keys(exposeMap))}`)
   if (optionsRecord) options.push(optionsRecord)
+
+  // Local directive registration: vFocus → focus, vClickOutside → clickOutside
+  if (directiveExports.length > 0) {
+    const entries = directiveExports.map(e => {
+      const name = e[1].toLowerCase() + e.slice(2)
+      return `${name}: ${e}`
+    })
+    options.push(`directives: { ${entries.join(', ')} }`)
+  }
 
   // Props
   const propsEntries: string[] = []

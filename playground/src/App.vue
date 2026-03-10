@@ -80,6 +80,11 @@
       <ErrorDemo />
     </div>
 
+    <h3>Custom Directives</h3>
+    <div class="grid">
+      <DirectiveDemo />
+    </div>
+
     <h3>Pure Exports &amp; Options API</h3>
     <div class="grid">
       <Greeting />
@@ -133,6 +138,9 @@ import IdDemo from './components/refs/IdDemo.vue'
 // Errors
 import ErrorDemo from './components/errors/ErrorDemo.vue'
 
+// Directives
+import DirectiveDemo from './components/directives/DirectiveDemo.vue'
+
 // Misc
 import Greeting from './components/misc/Greeting.vue'
 import OptionsDemo from './components/misc/OptionsDemo.vue'
@@ -146,6 +154,7 @@ const components = [
   'KeepAliveDemo', 'ProvideInject', 'PropsDemo', 'ModelDemo',
   'MultiModelDemo', 'ExposeDemo', 'SlotDemo', 'TemplateRefDemo',
   'CustomRefDemo', 'IdDemo', 'ErrorDemo',
+  'DirectiveDemo',
   'Greeting', 'OptionsDemo', 'OptionsAttrDemo',
 ]
 </script>

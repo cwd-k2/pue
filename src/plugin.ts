@@ -2,7 +2,7 @@ import type { Plugin, ViteDevServer } from 'vite'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import type { PueOptions } from './types'
-import { extract, moduleNameFromPath, writePursFile, scanAndExtract } from './extract'
+import { extract, moduleNameFromPath, writePursFile, scanAndExtract, scanStandalonePurs } from './extract'
 import { compileSync, compileAsync } from './compile'
 import { remapErrors, formatError } from './errors'
 import { getExportsFromExterns } from './externs'
@@ -72,6 +72,13 @@ export function pue(options: PueOptions = {}): Plugin {
       }
     }
 
+    for (const srcDir of srcDirs) {
+      const pattern = `${srcDir}/**/*.purs`
+      if (!content.includes(pattern)) {
+        toAdd.push(`"${pattern}"`)
+      }
+    }
+
     if (toAdd.length === 0) return
 
     const updated = content.replace(
@@ -89,6 +96,23 @@ export function pue(options: PueOptions = {}): Plugin {
     name: 'vite-plugin-pue',
     enforce: 'pre',
 
+    resolveId(id, importer) {
+      // Resolve relative imports from PureScript foreign.js files
+      // back to the original source directory
+      if (!id.startsWith('.') || !importer) return null
+      const outputBase = path.join(root, outputDir) + path.sep
+      if (!importer.startsWith(outputBase) || !importer.endsWith('foreign.js')) return null
+
+      const relPath = path.relative(path.join(root, outputDir), importer)
+      const moduleName = path.dirname(relPath).split(path.sep).join('.')
+      const originalFile = moduleMap.get(moduleName)
+      if (!originalFile) return null
+
+      const resolved = path.resolve(path.dirname(originalFile), id)
+      if (fs.existsSync(resolved)) return resolved
+      return null
+    },
+
     config() {
       return {
         optimizeDeps: {
@@ -99,6 +123,9 @@ export function pue(options: PueOptions = {}): Plugin {
                 build.onLoad({ filter: /\.vue$/ }, async (args) => {
                   const content = await fs.promises.readFile(args.path, 'utf-8')
                   if (!PURS_LANG_RE.test(content)) return undefined
+                  return { contents: 'export default {}', loader: 'js' }
+                })
+                build.onLoad({ filter: /\.purs$/ }, () => {
                   return { contents: 'export default {}', loader: 'js' }
                 })
               },
@@ -118,7 +145,9 @@ export function pue(options: PueOptions = {}): Plugin {
 
     buildStart() {
       ensureSpagoSources()
-      if (scanAndExtract(root, srcDirs, moduleMap, modulePrefix)) {
+      const hasVue = scanAndExtract(root, srcDirs, moduleMap, modulePrefix)
+      const hasPurs = scanStandalonePurs(root, srcDirs, moduleMap)
+      if (hasVue || hasPurs) {
         const result = compileSync(root, pursCommand)
         if (!result.success) {
           const errors = remapErrors(result.stderr, moduleMap)
@@ -127,6 +156,33 @@ export function pue(options: PueOptions = {}): Plugin {
           }
         }
       }
+    },
+
+    load(id) {
+      if (!id.endsWith('.purs')) return null
+      if (id.includes('.pue')) return null
+
+      let content: string
+      try {
+        content = fs.readFileSync(id, 'utf-8')
+      } catch {
+        return null
+      }
+
+      const modMatch = /^module\s+([\w.]+)/m.exec(content)
+      if (!modMatch) return null
+
+      const moduleName = modMatch[1]
+      const compiledPath = path.join(root, outputDir, moduleName, 'index.js')
+      const exports = getExports(moduleName)
+
+      if (exports.includes('main')) {
+        log(`entry point: ${moduleName}`)
+        return `import { main } from '${compiledPath}'\nmain()`
+      }
+
+      log(`module: ${moduleName}`)
+      return `export * from '${compiledPath}'`
     },
 
     transform(code, id) {
@@ -153,6 +209,53 @@ export function pue(options: PueOptions = {}): Plugin {
     },
 
     async handleHotUpdate(ctx) {
+      // Standalone .purs file changed — recompile and invalidate
+      if (ctx.file.endsWith('.purs') && !ctx.file.includes('.pue')) {
+        const compileResult = await compileAsync(root, pursCommand)
+
+        if (!compileResult.success) {
+          const errors = remapErrors(compileResult.stderr, moduleMap)
+          const message = errors.map(formatError).join('\n')
+
+          server?.config.logger.error(`[pue] Compilation failed:\n${message}`)
+          server?.ws.send({
+            type: 'error',
+            err: {
+              message: `PureScript compilation failed`,
+              stack: message,
+              plugin: 'vite-plugin-pue',
+            },
+          })
+          return []
+        }
+
+        log(`recompiled: ${ctx.file}`)
+
+        // Invalidate the .purs module and all pue-related modules
+        const invalidated: import('vite').ModuleNode[] = []
+        const pursModules = server?.moduleGraph.getModulesByFile(ctx.file)
+        if (pursModules) {
+          for (const m of pursModules) {
+            server?.moduleGraph.invalidateModule(m)
+            invalidated.push(m)
+          }
+        }
+        for (const [, file] of moduleMap) {
+          const modules = server?.moduleGraph.getModulesByFile(file)
+          if (modules) {
+            for (const m of modules) {
+              server?.moduleGraph.invalidateModule(m)
+              invalidated.push(m)
+            }
+          }
+        }
+
+        if (invalidated.length > 0) {
+          log(`invalidated ${invalidated.length} modules`)
+        }
+        return
+      }
+
       if (!ctx.file.endsWith('.vue')) return
 
       const content = await ctx.read()
