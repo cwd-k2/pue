@@ -214,7 +214,7 @@ export function findDefineRow(
   for (const decl of externs.declarations) {
     if (decl.tag !== 'value') continue
 
-    const rowType = unwrapPhantomType(decl.type, 'Define')
+    const rowType = unwrapPhantomType(decl.type, 'DefineComponent')
     if (!rowType) continue
 
     const result: Record<string, Record<string, string>> = {}

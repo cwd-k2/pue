@@ -123,7 +123,7 @@ export function transformSFC(
   // Determine which exports are metadata vs user bindings
   const fields = extractRecordFields(pursCode)
   const fieldSet = new Set(fields ?? [])
-  const metaExports = new Set(['setup', 'props', 'emits', 'model', 'expose', 'options', 'slots', 'defaults', 'define', 'define_'])
+  const metaExports = new Set(['setup', 'props', 'emits', 'model', 'expose', 'options', 'slots', 'defaults', 'define', 'defineComponent'])
   const pureExports = exports.filter(e => !metaExports.has(e) && !fieldSet.has(e))
 
   const importNames = ['setup as __pue_setup', ...pureExports]

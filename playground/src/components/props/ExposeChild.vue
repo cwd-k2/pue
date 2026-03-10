@@ -6,10 +6,10 @@
 import Prelude
 
 import Effect (Effect)
-import Pue (Define, define_, Ref, ref, modifyRef)
+import Pue (DefineComponent, defineComponent, Ref, ref, modifyRef)
 
-define :: Define ( expose :: { count :: Ref Int, increment :: Effect Unit } )
-define = define_
+define :: DefineComponent ( expose :: { count :: Ref Int, increment :: Effect Unit } )
+define = defineComponent
 
 setup = do
   count <- ref 0

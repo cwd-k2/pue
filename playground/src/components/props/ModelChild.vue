@@ -9,10 +9,10 @@
 <script lang="purs">
 import Prelude
 
-import Pue (Define, define_, readRef, toRef)
+import Pue (DefineComponent, defineComponent, readRef, toRef)
 
-define :: Define ( model :: { modelValue :: Int } )
-define = define_
+define :: DefineComponent ( model :: { modelValue :: Int } )
+define = defineComponent
 
 setup p emit = do
   modelRef <- toRef @"modelValue" p

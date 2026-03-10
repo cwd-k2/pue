@@ -1,7 +1,7 @@
 import * as Vue from "vue";
 
 // Declarations (phantom -- null at runtime)
-export const define_ = null;
+export const defineComponent = null;
 export const defineProps = null;
 export const defineEmits = null;
 export const defineModel = null;

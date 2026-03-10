@@ -1,5 +1,5 @@
 module Pue.Component
-  ( Define, define_
+  ( DefineComponent, defineComponent
   , DefineProps, defineProps
   , DefineEmits, defineEmits
   , DefineModel, defineModel
@@ -21,9 +21,9 @@ import Type.Proxy (Proxy(..))
 -- Declarations (phantom -- null at runtime, read by plugin via externs)
 
 -- | Consolidated component metadata declaration.
--- | `Define ( props :: { ... }, emits :: { ... }, model :: { ... } )`
-foreign import data Define :: Row Type -> Type
-foreign import define_ :: forall (r :: Row Type). Define r
+-- | `DefineComponent ( props :: { ... }, emits :: { ... }, model :: { ... } )`
+foreign import data DefineComponent :: Row Type -> Type
+foreign import defineComponent :: forall (r :: Row Type). DefineComponent r
 
 foreign import data DefineProps :: Type -> Type
 foreign import data DefineEmits :: Type -> Type
