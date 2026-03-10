@@ -1,163 +1,19 @@
 <template>
   <div id="app">
-    <h1>pue playground</h1>
-    <p class="subtitle">{{ components.length }} components — Vue features in PureScript</p>
-
-    <h3>Reactivity</h3>
-    <div class="grid">
-      <Counter />
-      <DoubleCounter />
-      <Fibonacci />
-      <Toggle />
-      <Stepper />
-      <Temperature />
-    </div>
-
-    <h3>Algorithms</h3>
-    <div class="grid">
-      <Collatz />
-      <GCD />
-    </div>
-
-    <h3>Watch &amp; WatchEffect</h3>
-    <div class="grid">
-      <WatchDemo />
-      <WatchEffectDemo />
-      <WatchPostDemo />
-      <WatchMultiDemo />
-      <WatchControlDemo />
-      <WatchOnceDemo />
-    </div>
-
-    <h3>EffectScope</h3>
-    <div class="grid">
-      <ScopeDemo />
-      <DetachedScopeDemo />
-    </div>
-
-    <h3>Lifecycle Hooks</h3>
-    <div class="grid">
-      <MountedDemo />
-      <LifecycleDemo />
-      <KeepAliveDemo />
-    </div>
-
-    <h3>Props &amp; Emits</h3>
-    <div class="grid">
-      <PropsDemo />
-    </div>
-
-    <h3>v-model</h3>
-    <div class="grid">
-      <ModelDemo />
-      <MultiModelDemo />
-    </div>
-
-    <h3>Expose</h3>
-    <div class="grid">
-      <ExposeDemo />
-    </div>
-
-    <h3>Provide / Inject</h3>
-    <div class="grid">
-      <ProvideInject />
-    </div>
-
-    <h3>Slots</h3>
-    <div class="grid">
-      <SlotDemo />
-    </div>
-
-    <h3>Ref Variants</h3>
-    <div class="grid">
-      <TemplateRefDemo />
-      <CustomRefDemo />
-      <IdDemo />
-    </div>
-
-    <h3>Error Handling</h3>
-    <div class="grid">
-      <ErrorDemo />
-    </div>
-
-    <h3>Custom Directives</h3>
-    <div class="grid">
-      <DirectiveDemo />
-    </div>
-
-    <h3>Pure Exports &amp; Options API</h3>
-    <div class="grid">
-      <Greeting />
-      <OptionsDemo />
-      <OptionsAttrDemo />
-    </div>
+    <header>
+      <h1><router-link to="/" class="logo">pue</router-link> <span class="sub">playground</span></h1>
+      <nav>
+        <router-link to="/reactivity">Reactivity</router-link>
+        <router-link to="/watch">Watch</router-link>
+        <router-link to="/lifecycle">Lifecycle</router-link>
+        <router-link to="/components">Components</router-link>
+        <router-link to="/advanced">Advanced</router-link>
+        <router-link to="/router">Router FFI</router-link>
+      </nav>
+    </header>
+    <router-view />
   </div>
 </template>
-
-<script setup>
-// Reactivity
-import Counter from './components/reactivity/Counter.vue'
-import DoubleCounter from './components/reactivity/DoubleCounter.vue'
-import Fibonacci from './components/reactivity/Fibonacci.vue'
-import Toggle from './components/reactivity/Toggle.vue'
-import Stepper from './components/reactivity/Stepper.vue'
-import Temperature from './components/reactivity/Temperature.vue'
-import Collatz from './components/reactivity/Collatz.vue'
-import GCD from './components/reactivity/GCD.vue'
-
-// Watch
-import WatchDemo from './components/watch/WatchDemo.vue'
-import WatchEffectDemo from './components/watch/WatchEffectDemo.vue'
-import WatchPostDemo from './components/watch/WatchPostDemo.vue'
-import WatchMultiDemo from './components/watch/WatchMultiDemo.vue'
-import WatchControlDemo from './components/watch/WatchControlDemo.vue'
-import WatchOnceDemo from './components/watch/WatchOnceDemo.vue'
-import ScopeDemo from './components/watch/ScopeDemo.vue'
-import DetachedScopeDemo from './components/watch/DetachedScopeDemo.vue'
-
-// Lifecycle
-import MountedDemo from './components/lifecycle/MountedDemo.vue'
-import LifecycleDemo from './components/lifecycle/LifecycleDemo.vue'
-import KeepAliveDemo from './components/lifecycle/KeepAliveDemo.vue'
-
-// Props / Model / Expose
-import PropsDemo from './components/props/PropsDemo.vue'
-import ModelDemo from './components/props/ModelDemo.vue'
-import MultiModelDemo from './components/props/MultiModelDemo.vue'
-import ExposeDemo from './components/props/ExposeDemo.vue'
-
-// Context
-import ProvideInject from './components/inject/ProvideInject.vue'
-import SlotDemo from './components/slots/SlotDemo.vue'
-
-// Refs
-import TemplateRefDemo from './components/refs/TemplateRefDemo.vue'
-import CustomRefDemo from './components/refs/CustomRefDemo.vue'
-import IdDemo from './components/refs/IdDemo.vue'
-
-// Errors
-import ErrorDemo from './components/errors/ErrorDemo.vue'
-
-// Directives
-import DirectiveDemo from './components/directives/DirectiveDemo.vue'
-
-// Misc
-import Greeting from './components/misc/Greeting.vue'
-import OptionsDemo from './components/misc/OptionsDemo.vue'
-import OptionsAttrDemo from './components/misc/OptionsAttrDemo.vue'
-
-const components = [
-  'Counter', 'DoubleCounter', 'Fibonacci', 'Toggle', 'Stepper',
-  'Temperature', 'Collatz', 'GCD', 'WatchDemo', 'WatchEffectDemo',
-  'WatchPostDemo', 'WatchMultiDemo', 'WatchControlDemo', 'WatchOnceDemo',
-  'ScopeDemo', 'DetachedScopeDemo', 'MountedDemo', 'LifecycleDemo',
-  'KeepAliveDemo', 'ProvideInject', 'PropsDemo', 'ModelDemo',
-  'MultiModelDemo', 'ExposeDemo', 'SlotDemo', 'TemplateRefDemo',
-  'CustomRefDemo', 'IdDemo', 'ErrorDemo',
-  'DirectiveDemo',
-  'Greeting', 'OptionsDemo', 'OptionsAttrDemo',
-]
-</script>
 
 <style>
 #app {
@@ -166,15 +22,31 @@ const components = [
   margin: 0 auto;
   padding: 2rem;
 }
+header { margin-bottom: 2rem; }
+h1 { margin: 0; }
+h1 .logo { color: inherit; text-decoration: none; }
+h1 .sub { font-weight: 300; color: #888; font-size: 0.8em; }
+nav {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+nav a {
+  color: #666;
+  text-decoration: none;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+nav a:hover { background: #f0f0f0; }
+nav a.router-link-active { color: #333; background: #e8e8e8; font-weight: 500; }
 h3 {
   margin-top: 2rem;
   margin-bottom: 0.5rem;
   color: #444;
   border-bottom: 1px solid #eee;
   padding-bottom: 0.25rem;
-}
-.subtitle {
-  color: #666;
 }
 .grid {
   display: grid;
