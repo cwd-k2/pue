@@ -7,7 +7,8 @@ module Pue.Component
   , DefineSlots, defineSlots
   , defineOptions, defineDefaults
   , emit
-  , provide, inject
+  , provide, inject, injectFactory
+  , hasInjectionContext
   , toRef, useTemplateRef, useModel
   , useSlots, useAttrs, useId
   ) where
@@ -129,6 +130,18 @@ provide = provideImpl (reflectSymbol (Proxy :: _ key))
 inject :: forall @key a. IsSymbol key => a -> Effect a
 inject = injectImpl (reflectSymbol (Proxy :: _ key))
 
+-- | Inject with a factory function as default.
+-- | The factory is called lazily only when no provided value is found.
+-- |
+-- | ```purescript
+-- | config <- injectFactory @"config" (pure defaultConfig)
+-- | ```
+injectFactory :: forall @key a. IsSymbol key => Effect a -> Effect a
+injectFactory = injectFactoryImpl (reflectSymbol (Proxy :: _ key))
+
+-- | Check whether `inject` can be used (i.e. inside setup or a functional component).
+foreign import hasInjectionContext :: Effect Boolean
+
 -- | Create a reactive ref from a single prop.
 -- | The key and value type are checked against the `DefineProps` row.
 -- | At runtime, uses `getCurrentInstance().props`.
@@ -177,5 +190,6 @@ foreign import useId :: Effect String
 -- Internal implementations
 foreign import provideImpl :: forall a. String -> a -> Effect Unit
 foreign import injectImpl :: forall a. String -> a -> Effect a
+foreign import injectFactoryImpl :: forall a. String -> Effect a -> Effect a
 foreign import toRefImpl :: forall source a. String -> source -> Effect (Ref a)
 foreign import useModelImpl :: forall source a. source -> String -> Effect (Ref a)

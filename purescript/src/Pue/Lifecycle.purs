@@ -3,6 +3,8 @@ module Pue.Lifecycle
   , onBeforeUnmount, onUnmounted
   , onActivated, onDeactivated
   , onErrorCaptured
+  , onRenderTracked, onRenderTriggered
+  , onServerPrefetch
   , nextTick
   ) where
 
@@ -39,6 +41,23 @@ foreign import onDeactivated :: Effect Unit -> Effect Unit
 -- | Register an error handler that captures errors from descendant components.
 -- | Return `true` to prevent the error from propagating further.
 foreign import onErrorCaptured :: forall a. (a -> Effect Boolean) -> Effect Unit
+
+-- | Debug hook: called when a reactive dependency is tracked during render.
+-- | Receives the debugger event. Development mode only.
+foreign import onRenderTracked :: forall a. (a -> Effect Unit) -> Effect Unit
+
+-- | Debug hook: called when a reactive dependency triggers a re-render.
+-- | Receives the debugger event. Development mode only.
+foreign import onRenderTriggered :: forall a. (a -> Effect Unit) -> Effect Unit
+
+-- | Register an async prefetch hook for server-side rendering.
+-- | The callback may return a Promise to defer rendering until resolved.
+-- |
+-- | ```purescript
+-- | onServerPrefetch do
+-- |   fetchData >>= writeRef data_
+-- | ```
+foreign import onServerPrefetch :: forall a. Effect a -> Effect Unit
 
 -- | Defer a callback to the next DOM update flush.
 foreign import nextTick :: Effect Unit -> Effect Unit

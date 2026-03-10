@@ -3,6 +3,8 @@ module Pue.Watch
   , Flush(..)
   , WatchOptions, watchOptions
   , watch, watchWith
+  , watch2, watch2With
+  , watch3, watch3With
   , watchEffect, watchEffectWith
   , onCleanup
   ) where
@@ -60,6 +62,27 @@ watch = watchWith watchOptions
 watchWith :: forall a. WatchOptions -> Ref a -> (a -> a -> Effect Unit) -> Effect WatchHandle
 watchWith opts source cb = watchImpl source cb (toJsOpts opts)
 
+-- | Watch two refs simultaneously.
+-- |
+-- | ```purescript
+-- | _ <- watch2 firstName lastName \f l f' l' ->
+-- |   log ("name changed: " <> f <> " " <> l)
+-- | ```
+watch2 :: forall a b. Ref a -> Ref b -> (a -> b -> a -> b -> Effect Unit) -> Effect WatchHandle
+watch2 = watch2With watchOptions
+
+-- | Watch two refs with explicit options.
+watch2With :: forall a b. WatchOptions -> Ref a -> Ref b -> (a -> b -> a -> b -> Effect Unit) -> Effect WatchHandle
+watch2With opts s1 s2 cb = watch2Impl s1 s2 cb (toJsOpts opts)
+
+-- | Watch three refs simultaneously.
+watch3 :: forall a b c. Ref a -> Ref b -> Ref c -> (a -> b -> c -> a -> b -> c -> Effect Unit) -> Effect WatchHandle
+watch3 = watch3With watchOptions
+
+-- | Watch three refs with explicit options.
+watch3With :: forall a b c. WatchOptions -> Ref a -> Ref b -> Ref c -> (a -> b -> c -> a -> b -> c -> Effect Unit) -> Effect WatchHandle
+watch3With opts s1 s2 s3 cb = watch3Impl s1 s2 s3 cb (toJsOpts opts)
+
 -- | Auto-tracking reactive effect with pre-flush timing (default).
 -- | Dependencies are collected by reading refs inside the callback.
 -- |
@@ -107,6 +130,20 @@ foreign import watchImpl
   :: forall a
    . Ref a
   -> (a -> a -> Effect Unit)
+  -> { immediate :: Boolean, once :: Boolean, deep :: Boolean, flush :: String }
+  -> Effect WatchHandle
+
+foreign import watch2Impl
+  :: forall a b
+   . Ref a -> Ref b
+  -> (a -> b -> a -> b -> Effect Unit)
+  -> { immediate :: Boolean, once :: Boolean, deep :: Boolean, flush :: String }
+  -> Effect WatchHandle
+
+foreign import watch3Impl
+  :: forall a b c
+   . Ref a -> Ref b -> Ref c
+  -> (a -> b -> c -> a -> b -> c -> Effect Unit)
   -> { immediate :: Boolean, once :: Boolean, deep :: Boolean, flush :: String }
   -> Effect WatchHandle
 

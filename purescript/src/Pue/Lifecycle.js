@@ -11,4 +11,13 @@ export const onDeactivated = (effect) => () => Vue.onDeactivated(effect);
 export const onErrorCaptured = (handler) => () => {
   Vue.onErrorCaptured((err) => handler(err)());
 };
+
+export const onRenderTracked = (handler) => () =>
+  Vue.onRenderTracked((e) => handler(e)());
+
+export const onRenderTriggered = (handler) => () =>
+  Vue.onRenderTriggered((e) => handler(e)());
+
+export const onServerPrefetch = (effect) => () => Vue.onServerPrefetch(effect);
+
 export const nextTick = (effect) => () => Vue.nextTick(effect);
