@@ -180,12 +180,20 @@ h3 {
   box-shadow: var(--shadow-card);
   transition: box-shadow var(--transition), border-color var(--transition);
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  flex-wrap: wrap;
+  column-gap: 0.35rem;
+  row-gap: 0.4rem;
+  align-items: baseline;
 }
 .card:hover {
   border-color: var(--c-border-hover);
   box-shadow: var(--shadow-card-hover);
+}
+
+/* block-level children take full width */
+.card > :not(button) {
+  flex-basis: 100%;
+  min-width: 0;
 }
 
 .card h2 {
@@ -213,6 +221,11 @@ h3 {
 
 /* ── Buttons ── */
 
+/* spacing between content and button row */
+.card > :not(button) + button { margin-top: 0.15rem; }
+/* spacing between button row and following content */
+.card > button + :not(button) { margin-top: 0.15rem; }
+
 .card button {
   display: inline-flex;
   align-items: center;
@@ -238,9 +251,6 @@ h3 {
   background: var(--c-accent-soft);
   transform: scale(0.97);
 }
-
-/* button row: adjacent buttons auto-group */
-.card button + button { margin-left: 0.25rem; }
 
 /* ── Inputs ── */
 
