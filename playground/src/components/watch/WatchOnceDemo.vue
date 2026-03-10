@@ -24,7 +24,3 @@ setup = do
 
   pure { count, captured, increment }
 </script>
-
-<style scoped>
-.meta { font-size: 0.8rem; color: #888; }
-</style>

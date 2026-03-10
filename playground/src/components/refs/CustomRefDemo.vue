@@ -32,7 +32,3 @@ setup = do
 
   pure { clamped, inc, dec }
 </script>
-
-<style scoped>
-.meta { font-size: 0.8rem; color: #888; }
-</style>

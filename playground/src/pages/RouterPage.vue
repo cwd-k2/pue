@@ -1,7 +1,7 @@
 <template>
   <div>
     <h3>Router FFI</h3>
-    <p class="desc">
+    <p class="page-desc">
       vue-router is not part of pue — it's integrated via standard PureScript FFI.
       This demonstrates the pattern for any Vue ecosystem library.
     </p>
@@ -16,5 +16,9 @@ import RouterDemo from '../components/router/RouterDemo.vue'
 </script>
 
 <style scoped>
-.desc { color: #666; margin-bottom: 1rem; }
+.page-desc {
+  color: var(--c-text-3);
+  font-size: 0.9rem;
+  margin: -0.25rem 0 1.25rem;
+}
 </style>

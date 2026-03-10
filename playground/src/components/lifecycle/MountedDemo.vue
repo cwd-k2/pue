@@ -26,7 +26,3 @@ setup = do
 
   pure { name, greeting, nameInput }
 </script>
-
-<style scoped>
-.meta { font-size: 0.8rem; color: #888; }
-</style>

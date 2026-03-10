@@ -27,6 +27,5 @@ setup = do
 </script>
 
 <style scoped>
-.meta { font-size: 0.8rem; color: #888; }
-input { padding: 0.25rem 0.5rem; }
+.meta { margin-top: 0.75rem; }
 </style>

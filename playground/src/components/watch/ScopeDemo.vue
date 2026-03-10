@@ -33,7 +33,3 @@ setup = do
 
   pure { count, tracked, increment, stop, status }
 </script>
-
-<style scoped>
-.meta { font-size: 0.8rem; color: #888; }
-</style>
