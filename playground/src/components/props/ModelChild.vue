@@ -9,19 +9,19 @@
 <script lang="purs">
 import Prelude
 
-import Pue (DefineComponent, defineComponent, readRef, toRef)
+import Pue (DefineModel, defineModel, readRef, writeRef, useModel)
 
-define :: DefineComponent ( model :: { modelValue :: Int } )
-define = defineComponent
+model :: DefineModel { modelValue :: Int }
+model = defineModel
 
-setup p emit = do
-  modelRef <- toRef @"modelValue" p
+setup = do
+  modelRef <- useModel @"modelValue" model
 
   let increment = do
         c <- readRef modelRef
-        emit "update:modelValue" (c + 1)
+        writeRef (c + 1) modelRef
 
-  let reset = emit "update:modelValue" 0
+  let reset = writeRef 0 modelRef
 
   pure { increment, reset }
 </script>

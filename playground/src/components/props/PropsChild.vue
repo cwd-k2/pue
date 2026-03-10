@@ -11,16 +11,19 @@
 <script lang="purs">
 import Prelude
 
-import Pue (DefineComponent, defineComponent, toRef)
+import Pue (DefineProps, defineProps, DefineEmits, defineEmits, emit, toRef)
 
-define :: DefineComponent ( props :: { msg :: String, count :: Int }, emits :: { notify :: Unit } )
-define = defineComponent
+props :: DefineProps { msg :: String, count :: Int }
+props = defineProps
 
-setup p emit = do
-  countRef <- toRef @"count" p
+emits :: DefineEmits { notify :: Unit }
+emits = defineEmits
+
+setup = do
+  countRef <- toRef @"count" props
 
   let doubled = (_ * 2) <$> countRef
-  let notify  = emit "notify" unit
+  let notify  = emit @"notify" emits unit
 
   pure { doubled, notify }
 </script>

@@ -13,18 +13,18 @@
 <script lang="purs">
 import Prelude
 
-import Pue (DefineComponent, defineComponent, toRef)
+import Pue (DefineModel, defineModel, writeRef, useModel)
 
-define :: DefineComponent ( model :: { title :: String, content :: String } )
-define = defineComponent
+model :: DefineModel { title :: String, content :: String }
+model = defineModel
 
-setup p emit = do
-  titleRef   <- toRef @"title" p
-  contentRef <- toRef @"content" p
+setup = do
+  titleRef   <- useModel @"title" model
+  contentRef <- useModel @"content" model
 
   let combined      = (\t c -> t <> ": " <> c) <$> titleRef <*> contentRef
-  let updateTitle   = emit "update:title"
-  let updateContent = emit "update:content"
+  let updateTitle   = \v -> writeRef v titleRef
+  let updateContent = \v -> writeRef v contentRef
 
   pure { combined, updateTitle, updateContent }
 </script>
