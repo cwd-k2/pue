@@ -8,6 +8,6 @@ import Prelude
 import Pue (inject)
 
 setup = do
-  theme <- inject @"theme" "default"
+  theme <- inject @"theme" (pure "default")
   pure { theme }
 </script>

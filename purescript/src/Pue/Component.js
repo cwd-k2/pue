@@ -21,8 +21,7 @@ export const emitImpl = (name) => (_source) => (value) => {
 
 // Context: provide / inject
 export const provideImpl = (key) => (value) => () => Vue.provide(key, value);
-export const injectImpl = (key) => (defaultVal) => () => Vue.inject(key, defaultVal);
-export const injectFactoryImpl = (key) => (factory) => () => Vue.inject(key, factory, true);
+export const injectImpl = (key) => (factory) => () => Vue.inject(key, factory, true);
 export const hasInjectionContext = () => Vue.hasInjectionContext();
 
 // Props: uses getCurrentInstance().props.

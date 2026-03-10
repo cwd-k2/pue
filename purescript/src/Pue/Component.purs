@@ -7,7 +7,7 @@ module Pue.Component
   , DefineSlots, defineSlots
   , defineOptions, defineDefaults
   , emit
-  , provide, inject, injectFactory
+  , provide, inject
   , hasInjectionContext
   , toRef, useTemplateRef, useModel
   , useSlots, useAttrs, useId
@@ -123,21 +123,14 @@ provide :: forall @key a. IsSymbol key => a -> Effect Unit
 provide = provideImpl (reflectSymbol (Proxy :: _ key))
 
 -- | Inject a value provided by an ancestor, with a default fallback.
+-- | The default is evaluated lazily only when no ancestor provides the key.
 -- |
 -- | ```purescript
--- | theme <- inject @"theme" "light"
+-- | theme  <- inject @"theme" (pure "light")
+-- | config <- inject @"config" createDefaultConfig
 -- | ```
-inject :: forall @key a. IsSymbol key => a -> Effect a
+inject :: forall @key a. IsSymbol key => Effect a -> Effect a
 inject = injectImpl (reflectSymbol (Proxy :: _ key))
-
--- | Inject with a factory function as default.
--- | The factory is called lazily only when no provided value is found.
--- |
--- | ```purescript
--- | config <- injectFactory @"config" (pure defaultConfig)
--- | ```
-injectFactory :: forall @key a. IsSymbol key => Effect a -> Effect a
-injectFactory = injectFactoryImpl (reflectSymbol (Proxy :: _ key))
 
 -- | Check whether `inject` can be used (i.e. inside setup or a functional component).
 foreign import hasInjectionContext :: Effect Boolean
@@ -189,7 +182,6 @@ foreign import useId :: Effect String
 
 -- Internal implementations
 foreign import provideImpl :: forall a. String -> a -> Effect Unit
-foreign import injectImpl :: forall a. String -> a -> Effect a
-foreign import injectFactoryImpl :: forall a. String -> Effect a -> Effect a
+foreign import injectImpl :: forall a. String -> Effect a -> Effect a
 foreign import toRefImpl :: forall source a. String -> source -> Effect (Ref a)
 foreign import useModelImpl :: forall source a. source -> String -> Effect (Ref a)
