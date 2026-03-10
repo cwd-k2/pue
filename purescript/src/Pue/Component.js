@@ -12,11 +12,12 @@ export const defineSlots = null;
 export const defineOptions = (r) => r;
 export const defineDefaults = (r) => r;
 
-// Emit: captures getCurrentInstance().emit during setup.
-// The source argument (DefineEmits, null at runtime) is ignored.
-export const emitImpl = (name) => (_source) => (value) => {
+// Emit: captures getCurrentInstance() eagerly at phantom-handle application,
+// not at value application time, so that partial application during setup
+// (e.g. `let notify = emit @"notify" emits`) is safe for later invocation.
+export const emitImpl = (name) => (_source) => {
   const instance = Vue.getCurrentInstance();
-  return () => instance.emit(name, value);
+  return (value) => () => instance.emit(name, value);
 };
 
 // Context: provide / inject
@@ -24,13 +25,17 @@ export const provideImpl = (key) => (value) => () => Vue.provide(key, value);
 export const injectImpl = (key) => (factory) => () => Vue.inject(key, factory, true);
 export const hasInjectionContext = () => Vue.hasInjectionContext();
 
-// Props: uses getCurrentInstance().props.
-// The source argument (DefineProps, null at runtime) is ignored.
-export const toRefImpl = (key) => (_source) => () =>
-  Vue.toRef(Vue.getCurrentInstance().props, key);
+// Props: captures getCurrentInstance().props eagerly at phantom-handle
+// application, matching the emit pattern.
+export const toRefImpl = (key) => (_source) => {
+  const props = Vue.getCurrentInstance().props;
+  return () => Vue.toRef(props, key);
+};
 
-export const useModelImpl = (_source) => (name) => () =>
-  Vue.useModel(Vue.getCurrentInstance().props, name);
+export const useModelImpl = (_source) => (name) => {
+  const props = Vue.getCurrentInstance().props;
+  return () => Vue.useModel(props, name);
+};
 
 // Context: utilities
 export const useTemplateRef = (name) => () => Vue.useTemplateRef(name);

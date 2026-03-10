@@ -10,6 +10,7 @@ module Pue.Component
   , provide, inject
   , hasInjectionContext
   , toRef, useTemplateRef, useModel
+  , Slots, Attrs
   , useSlots, useAttrs, useId
   ) where
 
@@ -171,11 +172,19 @@ useModel source = useModelImpl source (reflectSymbol (Proxy :: _ key))
 -- | Returns a `Ref` that is `null` until the component mounts.
 foreign import useTemplateRef :: forall a. String -> Effect (Ref a)
 
+-- | Opaque type for the component's slots object.
+-- | Returned from setup for template-side access.
+foreign import data Slots :: Type
+
+-- | Opaque type for fallthrough attributes.
+-- | Returned from setup for template-side access.
+foreign import data Attrs :: Type
+
 -- | Access the component's slots object.
-foreign import useSlots :: forall a. Effect a
+foreign import useSlots :: Effect Slots
 
 -- | Access fallthrough attributes not declared as props.
-foreign import useAttrs :: forall a. Effect a
+foreign import useAttrs :: Effect Attrs
 
 -- | Generate a unique ID for accessibility attributes (`aria-*`).
 foreign import useId :: Effect String
