@@ -6,6 +6,7 @@ module Pue.Component
   , DefineExpose, defineExpose
   , DefineSlots, defineSlots
   , defineOptions, defineDefaults
+  , emit
   , provide, inject
   , toRef, useTemplateRef, useModel
   , useSlots, useAttrs, useId
@@ -37,9 +38,21 @@ foreign import data DefineComponent :: Row Type -> Type
 foreign import defineComponent :: forall (r :: Row Type). DefineComponent r
 
 -- | Declare accepted props with their types.
+-- | Also serves as a typed handle for `toRef` and `useModel`.
+-- |
+-- | ```purescript
+-- | props :: DefineProps { count :: Int, label :: String }
+-- | props = defineProps
+-- | ```
 foreign import data DefineProps :: Type -> Type
 
 -- | Declare emitted events with their payload types.
+-- | Also serves as a typed handle for `emit`.
+-- |
+-- | ```purescript
+-- | emits :: DefineEmits { increment :: Unit }
+-- | emits = defineEmits
+-- | ```
 foreign import data DefineEmits :: Type -> Type
 
 -- | Declare v-model bindings with their types.
@@ -82,6 +95,24 @@ foreign import defineOptions :: forall r. { | r } -> { | r }
 -- | ```
 foreign import defineDefaults :: forall r. { | r } -> { | r }
 
+-- | Emit a typed event. The event name and payload type are checked
+-- | against the `DefineEmits` row at compile time.
+-- | At runtime, uses `getCurrentInstance().emit`.
+-- |
+-- | ```purescript
+-- | emits :: DefineEmits { notify :: Unit }
+-- | emits = defineEmits
+-- |
+-- | let notify = emit @"notify" emits unit
+-- | ```
+emit :: forall @key r a rest
+      . IsSymbol key
+     => Cons key a rest r
+     => DefineEmits { | r } -> a -> Effect Unit
+emit = emitImpl (reflectSymbol (Proxy :: _ key))
+
+foreign import emitImpl :: forall source a. String -> source -> a -> Effect Unit
+
 -- | Provide a value to descendant components under a type-level key.
 -- |
 -- | ```purescript
@@ -98,24 +129,37 @@ provide = provideImpl (reflectSymbol (Proxy :: _ key))
 inject :: forall @key a. IsSymbol key => a -> Effect a
 inject = injectImpl (reflectSymbol (Proxy :: _ key))
 
--- | Create a reactive ref from a single property of a reactive object.
--- | The key is specified as a type-level symbol.
+-- | Create a reactive ref from a single prop.
+-- | The key and value type are checked against the `DefineProps` row.
+-- | At runtime, uses `getCurrentInstance().props`.
 -- |
 -- | ```purescript
+-- | props :: DefineProps { count :: Int }
+-- | props = defineProps
+-- |
 -- | countRef <- toRef @"count" props
 -- | ```
-toRef :: forall @key r a rest. IsSymbol key => Cons key a rest r
-     => Record r -> Effect (Ref a)
+toRef :: forall @key r a rest
+      . IsSymbol key
+     => Cons key a rest r
+     => DefineProps { | r } -> Effect (Ref a)
 toRef = toRefImpl (reflectSymbol (Proxy :: _ key))
 
 -- | Create a writable ref synced with a v-model prop.
+-- | Accepts a `DefineModel` declaration; writes to the ref
+-- | automatically emit `update:<key>`.
 -- |
 -- | ```purescript
--- | model <- useModel @"modelValue" props
+-- | model :: DefineModel { modelValue :: Int }
+-- | model = defineModel
+-- |
+-- | modelRef <- useModel @"modelValue" model
 -- | ```
-useModel :: forall @key r a rest. IsSymbol key => Cons key a rest r
-         => Record r -> Effect (Ref a)
-useModel props = useModelImpl props (reflectSymbol (Proxy :: _ key))
+useModel :: forall @key r a rest
+         . IsSymbol key
+        => Cons key a rest r
+        => DefineModel { | r } -> Effect (Ref a)
+useModel source = useModelImpl source (reflectSymbol (Proxy :: _ key))
 
 -- | Obtain a template ref by its string name.
 -- | Returns a `Ref` that is `null` until the component mounts.
@@ -133,5 +177,5 @@ foreign import useId :: Effect String
 -- Internal implementations
 foreign import provideImpl :: forall a. String -> a -> Effect Unit
 foreign import injectImpl :: forall a. String -> a -> Effect a
-foreign import toRefImpl :: forall r a. String -> Record r -> Effect (Ref a)
-foreign import useModelImpl :: forall r a. Record r -> String -> Effect (Ref a)
+foreign import toRefImpl :: forall source a. String -> source -> Effect (Ref a)
+foreign import useModelImpl :: forall source a. source -> String -> Effect (Ref a)
