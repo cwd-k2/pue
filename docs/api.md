@@ -5,9 +5,9 @@
 Vue bindings for PureScript. The API is organized by the type signature pattern each operation follows.
 
 ```
-Layer 0  Algebra           Ref as Functor / Apply / Applicative + derived instances
-Layer 1  Ref Primitives    Construction, read, write of reactive state cells
-Layer 2  Subscriptions     Callback registration for reactive, lifecycle, and temporal events
+Layer 0  Algebra              Ref as Functor / Apply / Applicative + derived instances
+Layer 1  Ref Primitives       Construction, read, write of reactive state cells
+Layer 2  Subscriptions        Callback registration for reactive, lifecycle, and temporal events
 Layer 3  Component Interface  Compile-time declarations (phantom) + runtime context access
 ```
 
@@ -37,8 +37,8 @@ doubled <- computed do                 let doubled = (_ * 2) <$> count
   c <- readRef count
   pure (c * 2)
 
-combined <- computed do                let combined = (\t c -> t <> ": " <> c)
-  t <- readRef titleRef                                <$> titleRef <*> contentRef
+combined <- computed do                let combined = lift2 (\t c -> t <> ": " <> c)
+  t <- readRef titleRef                                    titleRef contentRef
   c <- readRef contentRef
   pure (t <> ": " <> c)
 ```
@@ -52,6 +52,7 @@ instance Semigroup a      => Semigroup (Ref a)       -- lift2 append
 instance Monoid a         => Monoid (Ref a)           -- pure mempty
 instance Semiring a       => Semiring (Ref a)         -- lift2 add/mul, pure zero/one
 instance Ring a           => Ring (Ref a)             -- lift2 sub
+instance CommutativeRing a => CommutativeRing (Ref a)
 instance HeytingAlgebra a => HeytingAlgebra (Ref a)   -- lift2 conj/disj, map not
 instance BooleanAlgebra a => BooleanAlgebra (Ref a)
 ```
@@ -72,7 +73,7 @@ Effectful operations on reactive state cells, classified by verb.
 
 #### `ref :: forall a. a -> Effect (Ref a)`
 
-Create a mutable reactive reference.
+Create a deep-reactive mutable ref.
 
 ```purescript
 count <- ref 0
@@ -84,7 +85,7 @@ Create a ref that only tracks `.value` replacement, not deep changes.
 
 #### `computed :: forall a. Effect a -> Effect (Ref a)`
 
-Create a computed ref. Prefer `<$>` and `<*>` from Layer 0 for pure derivations. Use `computed` only when the derivation involves side effects.
+Create a read-only computed ref. Prefer `<$>` and `<*>` from Layer 0 for pure derivations. Use `computed` only when the derivation involves side effects.
 
 ```purescript
 result <- computed do
@@ -97,19 +98,39 @@ result <- computed do
 
 Create a ref with explicit control over dependency tracking and update triggering.
 
-```purescript
-debounced <- customRef \track trigger -> { get: track *> readRef value, set: \v -> writeRef v value *> delay 300 trigger }
-```
-
 The factory receives `track` and `trigger` callbacks and returns `{ get, set }` accessors.
 
-#### `toRef :: forall props a. props -> String -> Effect (Ref a)`
+### Combinators: `... -> Ref a -> Ref b`
 
-Create a reactive ref linked to a property of a reactive object (typically props).
+#### `focus :: forall a b. (a -> b) -> (b -> a) -> Ref a -> Ref b`
+
+Bidirectional map — a pure Ref-to-Ref lens combinator. Creates a writable computed ref where reads go through the first function and writes go through the second (inverse) function.
+
+```purescript
+celsius <- ref 20
+let fahrenheit = focus (\c -> c * 9 / 5 + 32)
+                       (\f -> (f - 32) * 5 / 9)
+                       celsius
+
+-- Writing to fahrenheit updates celsius via the inverse
+modifyRef (_ + 9) fahrenheit
+```
+
+Unlike `computed`, `focus` is pure (no `Effect`) and produces a writable ref.
+
+#### `readonly :: forall a. Ref a -> Ref a`
+
+Create a read-only view of a ref. Writes to the returned ref are silently ignored.
+
+### Context-aware construction
+
+#### `toRef :: forall @key r a rest. IsSymbol key => Cons key a rest r => Record r -> Effect (Ref a)`
+
+Create a reactive ref linked to a property of a reactive object (typically props). The key is specified as a type-level symbol.
 
 ```purescript
 setup p emit = do
-  countRef <- toRef p "count"
+  countRef <- toRef @"count" p
   let doubled = (_ * 2) <$> countRef
 ```
 
@@ -117,19 +138,19 @@ setup p emit = do
 
 #### `useTemplateRef :: forall a. String -> Effect (Ref a)`
 
-Create a ref bound to a template `ref="..."` attribute.
+Create a ref bound to a template `ref="..."` attribute. The ref is `null` until mount.
 
 ```purescript
 inputEl <- useTemplateRef "inputEl"
 ```
 
-#### `useModel :: forall props a. props -> String -> Effect (Ref a)`
+#### `useModel :: forall @key r a rest. IsSymbol key => Cons key a rest r => Record r -> Effect (Ref a)`
 
-Create a writable ref bound to a `v-model` prop. Reads from the prop and emits `update:<name>` on write.
+Create a writable ref synced with a `v-model` prop. Reads from the prop and emits `update:<name>` on write.
 
 ```purescript
 setup p = do
-  titleRef <- useModel p "title"
+  titleRef <- useModel @"title" p
 ```
 
 ### Read: `Ref a -> Effect a`
@@ -150,15 +171,12 @@ Transform the current value.
 
 ```purescript
 modifyRef (_ + 1) count
+modifyRef not visible
 ```
 
 #### `triggerRef :: forall a. Ref a -> Effect Unit`
 
-Force a trigger on a `shallowRef`. Use when the inner value is mutated without replacing it.
-
-```purescript
-triggerRef myShallowRef
-```
+Force a reactivity notification on a `shallowRef`. Use when the inner value is mutated without replacing it.
 
 ---
 
@@ -179,13 +197,29 @@ _ <- watch count \newVal oldVal ->
   modifyRef (\xs -> xs <> [show oldVal <> " → " <> show newVal]) history
 ```
 
+**Multi-source watch** is achieved via `Applicative`:
+
+```purescript
+let combined = Tuple <$> refA <*> refB
+_ <- watch combined \(Tuple a b) _ -> ...
+```
+
 #### `watchImmediate :: forall a. Ref a -> (a -> a -> Effect Unit) -> Effect (Effect Unit)`
 
 Like `watch`, but fires the callback immediately with the current value.
 
+#### `watchOnce :: forall a. Ref a -> (a -> a -> Effect Unit) -> Effect (Effect Unit)`
+
+Watch that fires exactly once, then automatically stops.
+
+#### `watchWith :: forall a. Ref a -> (a -> a -> (Effect Unit -> Effect Unit) -> Effect Unit) -> Effect (Effect Unit)`
+
+Watch with cleanup registration. The callback receives `new`, `old`, and an `onCleanup` function. The registered cleanup runs before each re-invocation and on stop.
+
 ```purescript
-stop <- watchImmediate count \newVal _oldVal ->
-  writeRef (show newVal) display
+stop <- watchWith query \q _ onCleanup -> do
+  cancel <- fetchResults q
+  onCleanup cancel
 ```
 
 #### `watchEffect :: Effect Unit -> Effect (Effect Unit)`
@@ -200,23 +234,23 @@ stop <- watchEffect do
 
 #### `watchPostEffect :: Effect Unit -> Effect (Effect Unit)`
 
-Like `watchEffect`, but deferred until after DOM updates. Use when the effect needs to read updated DOM state.
+Like `watchEffect`, but deferred until after DOM updates.
 
 #### `watchSyncEffect :: Effect Unit -> Effect (Effect Unit)`
 
-Like `watchEffect`, but runs synchronously on every reactive change. Use sparingly — typically for debuggers or low-level state synchronization.
+Like `watchEffect`, but runs synchronously on every reactive change. Use sparingly.
 
-### Lifecycle: Component State Machine Transitions
+### Lifecycle
 
 ```purescript
-onBeforeMount   :: Effect Unit -> Effect Unit   -- before initial mount
-onMounted       :: Effect Unit -> Effect Unit   -- after mounted to DOM
-onBeforeUpdate  :: Effect Unit -> Effect Unit   -- before reactive re-render
-onUpdated       :: Effect Unit -> Effect Unit   -- after re-render
-onBeforeUnmount :: Effect Unit -> Effect Unit   -- before teardown
-onUnmounted     :: Effect Unit -> Effect Unit   -- after teardown
-onActivated     :: Effect Unit -> Effect Unit   -- KeepAlive: re-activated
-onDeactivated   :: Effect Unit -> Effect Unit   -- KeepAlive: deactivated
+onBeforeMount   :: Effect Unit -> Effect Unit
+onMounted       :: Effect Unit -> Effect Unit
+onBeforeUpdate  :: Effect Unit -> Effect Unit
+onUpdated       :: Effect Unit -> Effect Unit
+onBeforeUnmount :: Effect Unit -> Effect Unit
+onUnmounted     :: Effect Unit -> Effect Unit
+onActivated     :: Effect Unit -> Effect Unit   -- KeepAlive
+onDeactivated   :: Effect Unit -> Effect Unit   -- KeepAlive
 ```
 
 ```purescript
@@ -228,19 +262,13 @@ onMounted do
 
 Register a handler for errors from child components. Return `true` to prevent propagation.
 
-```purescript
-onErrorCaptured \err -> do
-  writeRef "Error caught" errorMsg
-  pure true
-```
-
-### Temporal: Deferred Execution
+### Temporal
 
 #### `nextTick :: Effect Unit -> Effect Unit`
 
-Register an effect to run after the next DOM update cycle.
+Defer a callback to the next DOM update flush.
 
-### Scope: Subscription Lifetime Management
+### Scope
 
 #### `EffectScope :: Type`
 
@@ -248,7 +276,7 @@ Opaque handle for a reactive effect scope.
 
 #### `effectScope :: Effect EffectScope`
 
-Create a new effect scope. All reactive effects registered inside `runScope` are collected and can be stopped together.
+Create a new scope.
 
 #### `runScope :: forall a. EffectScope -> Effect a -> Effect a`
 
@@ -265,12 +293,10 @@ Register a cleanup callback on the current active scope.
 ```purescript
 scope <- effectScope
 runScope scope do
-  watchEffect do
+  _ <- watchEffect do
     c <- readRef count
     log (show c)
-  onScopeDispose do
-    log "scope disposed"
--- later:
+  onScopeDispose (log "scope disposed")
 stopScope scope
 ```
 
@@ -278,94 +304,80 @@ stopScope scope
 
 ## Layer 3: Component Interface
 
-### Declarations (Phantom Types)
+### DefineComponent (consolidated)
 
-The plugin reads type annotations at compile time to generate Vue component options. Runtime values are `null`.
+Declare all component metadata in a single row-typed declaration:
 
-#### DefineProps
+```purescript
+import Pue (DefineComponent, defineComponent, toRef)
+
+define :: DefineComponent
+  ( props :: { msg :: String, count :: Int }
+  , emits :: { notify :: Unit }
+  , model :: { title :: String }
+  )
+define = defineComponent
+```
+
+The plugin reads the row fields from compiled externs and generates the appropriate Vue component options. Supported fields: `props`, `emits`, `model`, `expose`, `slots`.
+
+### Individual declarations
+
+For simpler cases, individual phantom types are available:
 
 ```purescript
 props :: DefineProps { msg :: String, count :: Int }
 props = defineProps
-```
 
-Generates `props: { msg: { type: String }, count: { type: Number } }`.
-
-Type mapping: `String` → `String`, `Int`/`Number` → `Number`, `Boolean` → `Boolean`.
-
-#### DefineEmits
-
-```purescript
 emits :: DefineEmits { notify :: Unit }
 emits = defineEmits
-```
 
-Generates `emits: ["notify"]`.
-
-#### DefineModel
-
-```purescript
 model :: DefineModel { title :: String, content :: String }
 model = defineModel
-```
 
-Generates props for each field + `emits: ["update:title", "update:content"]` for Vue 3 named `v-model`.
-
-#### DefineExpose
-
-```purescript
 expose :: DefineExpose { count :: Ref Int, increment :: Effect Unit }
 expose = defineExpose
-```
 
-Options API: generates `expose: ["count", "increment"]`.
-Setup SFC: generates `defineExpose({ count, increment })`.
-
-#### DefineSlots
-
-```purescript
 slots :: DefineSlots { title :: {}, footer :: {} }
 slots = defineSlots
 ```
 
-Declares named slot types for documentation and tooling.
+Type mapping: `String` → `String`, `Int`/`Number` → `Number`, `Boolean` → `Boolean`, `Array _` → `Array`, `Effect _` → `Function`.
 
-#### Defaults (record literal)
+### Runtime declarations
+
+#### `defineOptions :: forall r. { | r } -> { | r }`
+
+Declare Vue component options. Identity at runtime — the plugin extracts the record value.
 
 ```purescript
-props :: DefineProps { msg :: String, count :: Int }
-props = defineProps
-
-defaults = { count: 0 }
+options = defineOptions { inheritAttrs: false }
 ```
 
-Default values are merged into the generated prop definitions:
-`props: { msg: { type: String }, count: { type: Number, default: 0 } }`.
+#### `defineDefaults :: forall r. { | r } -> { | r }`
 
-#### DefineOptions (record literal)
+Declare default values for props. Merged into generated prop definitions.
 
 ```purescript
-options = { inheritAttrs: false }
+defaults = defineDefaults { count: 0, label: "untitled" }
 ```
 
-Merged directly into component options.
+### Context
 
-### Context: Component Environment
+#### `provide :: forall @key a. IsSymbol key => a -> Effect Unit`
 
-#### `provide :: forall a. String -> a -> Effect Unit`
-
-Provide a value to descendant components.
-
-#### `inject :: forall a. String -> a -> Effect a`
-
-Inject a value provided by an ancestor. Returns the default if not provided.
+Provide a value to descendant components under a type-level key.
 
 ```purescript
--- Parent
-provide "theme" "dark"
+provide @"theme" "dark"
+```
 
--- Descendant
-theme <- inject "theme" "default"
+#### `inject :: forall @key a. IsSymbol key => a -> Effect a`
+
+Inject a value provided by an ancestor, with a default fallback.
+
+```purescript
+theme <- inject @"theme" "light"
 ```
 
 #### `useSlots :: forall a. Effect a`
@@ -374,15 +386,11 @@ Access the slots object.
 
 #### `useAttrs :: forall a. Effect a`
 
-Access the attrs object (fallthrough attributes).
+Access fallthrough attributes.
 
 #### `useId :: Effect String`
 
-Generate a unique ID for accessibility.
-
-```purescript
-uid <- useId
-```
+Generate a unique ID for accessibility attributes.
 
 ---
 
@@ -408,7 +416,7 @@ setup = do
 
 ```purescript
 setup p emit = do
-  countRef <- toRef p "count"
+  countRef <- toRef @"count" p
   let doubled = (_ * 2) <$> countRef
   let notify = emit "notify" unit
   pure { doubled, notify }
@@ -424,8 +432,7 @@ The plugin detects argument count and generates the appropriate bridge:
 Modules without `setup` export values directly:
 
 ```purescript
-module App.Constants where
-
-message :: String
 message = "Hello from PureScript"
+
+greeting name = "Hello, " <> name <> "!"
 ```

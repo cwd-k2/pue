@@ -11,10 +11,8 @@ Write PureScript in Vue Single File Components.
 </template>
 
 <script lang="purs">
-module App.Counter where
-
 import Prelude
-import Pue (Ref, ref, modifyRef)
+import Pue (ref, modifyRef)
 
 setup = do
   count <- ref 0
@@ -49,7 +47,7 @@ export default defineConfig({
 })
 ```
 
-The plugin automatically adds `.pue/**/*.purs` and pue library sources to your spago config on first build.
+The plugin automatically adds `.pue/**/*.purs` and pue library sources to your spago config on first build. Module names are derived from file paths (`src/components/Counter.vue` → `App.Components.Counter`).
 
 ## How it works
 
@@ -60,7 +58,7 @@ The plugin automatically adds `.pue/**/*.purs` and pue library sources to your s
 
 ### The `setup` convention
 
-Export a `setup` function that returns a record via `pure { ... }`. Field names are extracted automatically — no type annotation needed:
+Export a `setup` function that returns a record. Field names become template bindings — no annotation needed:
 
 ```purescript
 setup = do
@@ -69,51 +67,79 @@ setup = do
   pure { count, increment }
 ```
 
-- **`Ref a`** → Vue's `ref()` — reactive values, auto-unwrapped in templates
-- **`Effect Unit`** → `() => void` — event handlers (`@click`, etc.)
-- **`Effect a`** → PureScript's `Effect` compiles to `() => a`, naturally aligning with Vue's `computed()`, `onMounted()`, etc.
+- **`Ref a`** → reactive values, auto-unwrapped in templates
+- **`Effect Unit`** → event handlers (`@click`, etc.)
+- **`Effect a`** → PureScript's `Effect` compiles to `() => a`, naturally aligning with Vue's deferred-execution APIs
 
-## API
+## Ref as Functor / Applicative
 
-The `Pue` module is organized in four layers, classified by type signature pattern:
-
-```
-Layer 0  Algebra              Ref as Functor / Apply / Applicative + derived instances
-Layer 1  Ref Primitives       Construction, read, write of reactive state cells
-Layer 2  Subscriptions        Callback registration for reactive, lifecycle, temporal events
-Layer 3  Component Interface  Compile-time declarations (phantom) + runtime context
-```
-
-### Ref as Functor / Applicative
-
-`Ref` supports `<$>` and `<*>` — derived refs are created as `Vue.computed` automatically:
+`Ref` supports `<$>`, `<*>`, and algebraic operations — derived refs are created as `Vue.computed` automatically:
 
 ```purescript
 a <- ref 0
 b <- ref 0
 let total = a + b                -- Semiring: computed(() => a.value + b.value)
-let doubled = (_ * 2) <$> count  -- Functor: computed(() => count.value * 2)
-let combined = (\x y -> x <> ": " <> y) <$> title <*> content  -- Apply
+let doubled = (_ * 2) <$> count  -- Functor
+let combined = lift2 gcd a b     -- Apply
 ```
 
-### Component Interface
+### focus — bidirectional Ref map
 
 ```purescript
-props :: DefineProps { msg :: String, count :: Int }
-props = defineProps
-
-emits :: DefineEmits { notify :: Unit }
-emits = defineEmits
-
-model :: DefineModel { title :: String, content :: String }
-model = defineModel
+celsius <- ref 20
+let fahrenheit = focus (\c -> c * 9 / 5 + 32) (\f -> (f - 32) * 5 / 9) celsius
+-- Both celsius and fahrenheit are writable; changes propagate in both directions
 ```
 
-See [docs/api.md](docs/api.md) for full reference.
+## Component declarations
 
-## Usage
+Use `DefineComponent` to declare props, emits, model, and other metadata in one place:
 
-`<script lang="purs">` — The module is wrapped as a Vue component options object with a `setup()` method. Modules without `setup` export all bindings directly through a generated `setup()` wrapper.
+```purescript
+import Pue (DefineComponent, defineComponent, toRef)
+
+define :: DefineComponent
+  ( props :: { msg :: String, count :: Int }
+  , emits :: { notify :: Unit }
+  )
+define = defineComponent
+
+setup p emit = do
+  countRef <- toRef @"count" p
+  let doubled = (_ * 2) <$> countRef
+  let notify  = emit "notify" unit
+  pure { doubled, notify }
+```
+
+Component options and prop defaults use identity macros:
+
+```purescript
+import Pue (defineOptions, defineDefaults)
+
+options = defineOptions { inheritAttrs: false }
+defaults = defineDefaults { count: 0 }
+```
+
+### Component imports
+
+Use a vanilla `<script>` block for child component imports:
+
+```vue
+<script>
+import ChildComponent from './ChildComponent.vue'
+</script>
+
+<script lang="purs">
+import Prelude
+import Pue (provide)
+
+setup = do
+  provide @"theme" "dark"
+  pure {}
+</script>
+```
+
+See [docs/api.md](docs/api.md) for the full API reference.
 
 ## Editor support
 
@@ -129,8 +155,8 @@ See [docs/editor.md](docs/editor.md) for details.
 
 | Topic | Description |
 |-------|-------------|
+| [API reference](docs/api.md) | Complete PureScript API for Vue reactivity |
 | [Type system](docs/type-system.md) | How Vue's reactivity maps to PureScript's types |
-| [API reference](docs/api.md) | PureScript bindings for Vue reactivity |
 | [Architecture](docs/architecture.md) | How the Vite plugin works internally |
 | [Editor support](docs/editor.md) | Neovim, VSCode, Volar setup |
 
