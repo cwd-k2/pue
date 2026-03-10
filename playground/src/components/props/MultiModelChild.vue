@@ -1,10 +1,10 @@
 <template>
   <div>
     <p>
-      <label>Title: <input :value="title" @input="updateTitle($event.target.value)" /></label>
+      <label>Title: <input :value="title" @input="(e) => updateTitle(e.target.value)()" /></label>
     </p>
     <p>
-      <label>Content: <textarea :value="content" @input="updateContent($event.target.value)" /></label>
+      <label>Content: <textarea :value="content" @input="(e) => updateContent(e.target.value)()" /></label>
     </p>
     <p class="preview">Preview: {{ combined }}</p>
   </div>

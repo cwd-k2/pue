@@ -10,7 +10,8 @@
 <script lang="purs">
 import Prelude
 
-import Pue (Ref, ref, writeRef, useTemplateRef, onMounted)
+import Pue (ref, writeRef, readRef, useTemplateRef, onMounted)
+import Pue.Directive (Element, focus)
 
 setup = do
   name     <- ref ""
@@ -20,6 +21,8 @@ setup = do
 
   onMounted do
     writeRef "Hello, world!" greeting
+    el <- readRef nameInput
+    focus el
 
   pure { name, greeting, nameInput }
 </script>

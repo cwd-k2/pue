@@ -2,10 +2,10 @@
   <div class="card">
     <h2>Multi-source Watch</h2>
     <p>
-      <label>First: <input :value="first" @input="setFirst($event.target.value)" /></label>
+      <label>First: <input :value="first" @input="(e) => setFirst(e.target.value)()" /></label>
     </p>
     <p>
-      <label>Last: <input :value="last" @input="setLast($event.target.value)" /></label>
+      <label>Last: <input :value="last" @input="(e) => setLast(e.target.value)()" /></label>
     </p>
     <p>Full: <strong>{{ full }}</strong></p>
     <ul>
