@@ -2,9 +2,8 @@ module Pue.Watch
   ( WatchHandle
   , Flush(..)
   , WatchOptions, watchOptions
+  , class WatchSource, watchRaw
   , watch, watchWith
-  , watch2, watch2With
-  , watch3, watch3With
   , watchEffect, watchEffectWith
   , onCleanup
   ) where
@@ -44,44 +43,54 @@ type WatchOptions =
 watchOptions :: WatchOptions
 watchOptions = { immediate: false, once: false, deep: false, flush: Pre }
 
--- | Watch a ref for changes.
+-- | Sources accepted by `watch`: a `Ref` or an `Effect` getter.
+-- |
+-- | - `Ref a` — tracks a single reactive ref directly
+-- | - `Effect a` — getter function; tracks all refs read during execution
+-- |
+-- | Multi-source watching uses the getter instance with Applicative:
 -- |
 -- | ```purescript
+-- | _ <- watch (Tuple <$> readRef a <*> readRef b) \(Tuple x y) (Tuple x' y') ->
+-- |   log ("changed")
+-- | ```
+class WatchSource source value | source -> value where
+  watchRaw :: source -> (value -> value -> Effect Unit)
+           -> { immediate :: Boolean, once :: Boolean, deep :: Boolean, flush :: String }
+           -> Effect WatchHandle
+
+instance WatchSource (Ref a) a where
+  watchRaw = watchSourceImpl
+
+instance WatchSource (Effect a) a where
+  watchRaw = watchSourceImpl
+
+-- | Watch a reactive source for changes.
+-- |
+-- | ```purescript
+-- | -- Single ref
 -- | _ <- watch count \new old ->
 -- |   modifyRef (_ <> [show new]) history
+-- |
+-- | -- Derived value (getter)
+-- | _ <- watch ((_ * 2) <$> readRef count) \doubled old ->
+-- |   log (show doubled)
+-- |
+-- | -- Multiple sources
+-- | _ <- watch (Tuple <$> readRef a <*> readRef b) \new old ->
+-- |   log (show new)
 -- | ```
-watch :: forall a. Ref a -> (a -> a -> Effect Unit) -> Effect WatchHandle
+watch :: forall s v. WatchSource s v => s -> (v -> v -> Effect Unit) -> Effect WatchHandle
 watch = watchWith watchOptions
 
--- | Watch a ref with explicit options.
+-- | Watch with explicit options.
 -- |
 -- | ```purescript
 -- | _ <- watchWith (watchOptions { deep = true, immediate = true }) obj \new old ->
 -- |   log "deep change detected"
 -- | ```
-watchWith :: forall a. WatchOptions -> Ref a -> (a -> a -> Effect Unit) -> Effect WatchHandle
-watchWith opts source cb = watchImpl source cb (toJsOpts opts)
-
--- | Watch two refs simultaneously.
--- |
--- | ```purescript
--- | _ <- watch2 firstName lastName \f l f' l' ->
--- |   log ("name changed: " <> f <> " " <> l)
--- | ```
-watch2 :: forall a b. Ref a -> Ref b -> (a -> b -> a -> b -> Effect Unit) -> Effect WatchHandle
-watch2 = watch2With watchOptions
-
--- | Watch two refs with explicit options.
-watch2With :: forall a b. WatchOptions -> Ref a -> Ref b -> (a -> b -> a -> b -> Effect Unit) -> Effect WatchHandle
-watch2With opts s1 s2 cb = watch2Impl s1 s2 cb (toJsOpts opts)
-
--- | Watch three refs simultaneously.
-watch3 :: forall a b c. Ref a -> Ref b -> Ref c -> (a -> b -> c -> a -> b -> c -> Effect Unit) -> Effect WatchHandle
-watch3 = watch3With watchOptions
-
--- | Watch three refs with explicit options.
-watch3With :: forall a b c. WatchOptions -> Ref a -> Ref b -> Ref c -> (a -> b -> c -> a -> b -> c -> Effect Unit) -> Effect WatchHandle
-watch3With opts s1 s2 s3 cb = watch3Impl s1 s2 s3 cb (toJsOpts opts)
+watchWith :: forall s v. WatchSource s v => WatchOptions -> s -> (v -> v -> Effect Unit) -> Effect WatchHandle
+watchWith opts source cb = watchRaw source cb (toJsOpts opts)
 
 -- | Auto-tracking reactive effect with pre-flush timing (default).
 -- | Dependencies are collected by reading refs inside the callback.
@@ -126,24 +135,10 @@ toJsOpts :: WatchOptions -> { immediate :: Boolean, once :: Boolean, deep :: Boo
 toJsOpts { immediate, once, deep, flush } =
   { immediate, once, deep, flush: flushStr flush }
 
-foreign import watchImpl
-  :: forall a
-   . Ref a
-  -> (a -> a -> Effect Unit)
-  -> { immediate :: Boolean, once :: Boolean, deep :: Boolean, flush :: String }
-  -> Effect WatchHandle
-
-foreign import watch2Impl
-  :: forall a b
-   . Ref a -> Ref b
-  -> (a -> b -> a -> b -> Effect Unit)
-  -> { immediate :: Boolean, once :: Boolean, deep :: Boolean, flush :: String }
-  -> Effect WatchHandle
-
-foreign import watch3Impl
-  :: forall a b c
-   . Ref a -> Ref b -> Ref c
-  -> (a -> b -> c -> a -> b -> c -> Effect Unit)
+foreign import watchSourceImpl
+  :: forall source value
+   . source
+  -> (value -> value -> Effect Unit)
   -> { immediate :: Boolean, once :: Boolean, deep :: Boolean, flush :: String }
   -> Effect WatchHandle
 
