@@ -123,7 +123,7 @@ export function transformSFC(
   // Determine which exports are metadata vs user bindings
   const fields = extractRecordFields(pursCode)
   const fieldSet = new Set(fields ?? [])
-  const metaExports = new Set(['setup', 'props', 'emits', 'model', 'expose', 'options', 'slots', 'defaults', 'define', 'defineComponent'])
+  const metaExports = new Set(['setup', ...extractMacroBindings(pursCode)])
   const pureExports = exports.filter(e => !metaExports.has(e) && !fieldSet.has(e))
 
   const importNames = ['setup as __pue_setup', ...pureExports]
@@ -214,7 +214,7 @@ function pursTypeToVue(type: string): string | null {
 }
 
 function extractDefaultsRecord(source: string): Record<string, string> | null {
-  const re = /^defaults\s*=\s*(?:defineDefaults\s*)?\{([^}]+)\}/m
+  const re = /defineDefaults\s*\{([^}]+)\}/m
   const match = re.exec(source)
   if (!match) return null
 
@@ -227,10 +227,22 @@ function extractDefaultsRecord(source: string): Record<string, string> | null {
 }
 
 function extractOptionsRecord(source: string): string | null {
-  const re = /^options\s*=\s*(?:defineOptions\s*)?\{([^}]+)\}/m
+  const re = /defineOptions\s*\{([^}]+)\}/m
   const match = re.exec(source)
   if (!match) return null
   return match[1].trim()
+}
+
+/**
+ * Detect all variable names bound to macro calls (defineComponent, defineOptions, etc.)
+ * so they can be excluded from template bindings.
+ */
+function extractMacroBindings(source: string): string[] {
+  const re = /^(\w+)\s*=\s*(?:defineComponent|defineOptions|defineDefaults|defineProps|defineEmits|defineModel|defineExpose|defineSlots)\b/gm
+  const names: string[] = []
+  let m
+  while ((m = re.exec(source))) names.push(m[1])
+  return names
 }
 
 function propEntry(name: string, type: string, defaultsMap: Record<string, string> | null): string {
