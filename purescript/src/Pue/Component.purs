@@ -5,6 +5,7 @@ module Pue.Component
   , DefineModel, defineModel
   , DefineExpose, defineExpose
   , DefineSlots, defineSlots
+  , defineOptions, defineDefaults
   , provide, inject
   , toRef, useTemplateRef, useModel
   , useSlots, useAttrs, useId
@@ -36,6 +37,10 @@ foreign import defineEmits :: forall a. DefineEmits a
 foreign import defineModel :: forall a. DefineModel a
 foreign import defineExpose :: forall a. DefineExpose a
 foreign import defineSlots :: forall a. DefineSlots a
+
+-- Runtime value declarations (identity at runtime, read by plugin)
+foreign import defineOptions :: forall r. { | r } -> { | r }
+foreign import defineDefaults :: forall r. { | r } -> { | r }
 
 -- Context: provide / inject with type-level keys
 foreign import provideImpl :: forall a. String -> a -> Effect Unit

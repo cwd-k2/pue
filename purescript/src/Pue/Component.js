@@ -8,6 +8,10 @@ export const defineModel = null;
 export const defineExpose = null;
 export const defineSlots = null;
 
+// Runtime value declarations (identity)
+export const defineOptions = (r) => r;
+export const defineDefaults = (r) => r;
+
 // Context: provide / inject
 export const provideImpl = (key) => (value) => () => Vue.provide(key, value);
 export const injectImpl = (key) => (defaultVal) => () => Vue.inject(key, defaultVal);

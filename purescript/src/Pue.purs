@@ -10,4 +10,4 @@ import Pue.Ref (Ref, ref, shallowRef, computed, customRef, focus, readRef, write
 import Pue.Watch (watch, watchImmediate, watchOnce, watchWith, watchEffect, watchPostEffect, watchSyncEffect)
 import Pue.Lifecycle (onBeforeMount, onMounted, onBeforeUpdate, onUpdated, onBeforeUnmount, onUnmounted, onActivated, onDeactivated, onErrorCaptured, nextTick)
 import Pue.Scope (EffectScope, effectScope, runScope, stopScope, onScopeDispose)
-import Pue.Component (DefineComponent, defineComponent, DefineProps, defineProps, DefineEmits, defineEmits, DefineModel, defineModel, DefineExpose, defineExpose, DefineSlots, defineSlots, provide, inject, toRef, useTemplateRef, useModel, useSlots, useAttrs, useId)
+import Pue.Component (DefineComponent, defineComponent, DefineProps, defineProps, DefineEmits, defineEmits, DefineModel, defineModel, DefineExpose, defineExpose, DefineSlots, defineSlots, defineOptions, defineDefaults, provide, inject, toRef, useTemplateRef, useModel, useSlots, useAttrs, useId)

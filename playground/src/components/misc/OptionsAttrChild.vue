@@ -8,9 +8,9 @@
 <script lang="purs">
 import Prelude
 
-import Pue (useAttrs)
+import Pue (defineOptions, useAttrs)
 
-options = { inheritAttrs: false }
+options = defineOptions { inheritAttrs: false }
 
 setup = do
   attrs <- useAttrs

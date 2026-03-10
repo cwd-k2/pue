@@ -214,7 +214,7 @@ function pursTypeToVue(type: string): string | null {
 }
 
 function extractDefaultsRecord(source: string): Record<string, string> | null {
-  const re = /^defaults\s*=\s*\{([^}]+)\}/m
+  const re = /^defaults\s*=\s*(?:defineDefaults\s*)?\{([^}]+)\}/m
   const match = re.exec(source)
   if (!match) return null
 
@@ -227,7 +227,7 @@ function extractDefaultsRecord(source: string): Record<string, string> | null {
 }
 
 function extractOptionsRecord(source: string): string | null {
-  const re = /^options\s*=\s*\{([^}]+)\}/m
+  const re = /^options\s*=\s*(?:defineOptions\s*)?\{([^}]+)\}/m
   const match = re.exec(source)
   if (!match) return null
   return match[1].trim()
