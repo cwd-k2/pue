@@ -2,7 +2,6 @@ module Pue.Watch
   ( WatchHandle
   , Flush(..)
   , WatchOptions, watchOptions
-  , class WatchSource, watchRaw
   , watch, watchWith
   , watchEffect, watchEffectWith
   , onCleanup
@@ -43,44 +42,22 @@ type WatchOptions =
 watchOptions :: WatchOptions
 watchOptions = { immediate: false, once: false, deep: false, flush: Pre }
 
--- | Sources accepted by `watch`: a `Ref` or an `Effect` getter.
--- |
--- | - `Ref a` — tracks a single reactive ref directly
--- | - `Effect a` — getter function; tracks all refs read during execution
--- |
--- | Multi-source watching uses the getter instance with Applicative:
--- |
--- | ```purescript
--- | _ <- watch (Tuple <$> readRef a <*> readRef b) \(Tuple x y) (Tuple x' y') ->
--- |   log ("changed")
--- | ```
-class WatchSource source value | source -> value where
-  watchRaw :: source -> (value -> value -> Effect Unit)
-           -> { immediate :: Boolean, once :: Boolean, deep :: Boolean, flush :: String }
-           -> Effect WatchHandle
-
-instance WatchSource (Ref a) a where
-  watchRaw = watchSourceImpl
-
-instance WatchSource (Effect a) a where
-  watchRaw = watchSourceImpl
-
--- | Watch a reactive source for changes.
+-- | Watch a reactive ref for changes.
 -- |
 -- | ```purescript
 -- | -- Single ref
 -- | _ <- watch count \new old ->
 -- |   modifyRef (_ <> [show new]) history
 -- |
--- | -- Derived value (getter)
--- | _ <- watch ((_ * 2) <$> readRef count) \doubled old ->
+-- | -- Derived (Functor)
+-- | _ <- watch ((_ * 2) <$> count) \doubled old ->
 -- |   log (show doubled)
 -- |
--- | -- Multiple sources
--- | _ <- watch (Tuple <$> readRef a <*> readRef b) \new old ->
+-- | -- Multiple sources (Applicative)
+-- | _ <- watch (Tuple <$> firstName <*> lastName) \new old ->
 -- |   log (show new)
 -- | ```
-watch :: forall s v. WatchSource s v => s -> (v -> v -> Effect Unit) -> Effect WatchHandle
+watch :: forall a. Ref a -> (a -> a -> Effect Unit) -> Effect WatchHandle
 watch = watchWith watchOptions
 
 -- | Watch with explicit options.
@@ -89,8 +66,8 @@ watch = watchWith watchOptions
 -- | _ <- watchWith (watchOptions { deep = true, immediate = true }) obj \new old ->
 -- |   log "deep change detected"
 -- | ```
-watchWith :: forall s v. WatchSource s v => WatchOptions -> s -> (v -> v -> Effect Unit) -> Effect WatchHandle
-watchWith opts source cb = watchRaw source cb (toJsOpts opts)
+watchWith :: forall a. WatchOptions -> Ref a -> (a -> a -> Effect Unit) -> Effect WatchHandle
+watchWith opts source cb = watchImpl source cb (toJsOpts opts)
 
 -- | Auto-tracking reactive effect with pre-flush timing (default).
 -- | Dependencies are collected by reading refs inside the callback.
@@ -135,10 +112,10 @@ toJsOpts :: WatchOptions -> { immediate :: Boolean, once :: Boolean, deep :: Boo
 toJsOpts { immediate, once, deep, flush } =
   { immediate, once, deep, flush: flushStr flush }
 
-foreign import watchSourceImpl
-  :: forall source value
-   . source
-  -> (value -> value -> Effect Unit)
+foreign import watchImpl
+  :: forall a
+   . Ref a
+  -> (a -> a -> Effect Unit)
   -> { immediate :: Boolean, once :: Boolean, deep :: Boolean, flush :: String }
   -> Effect WatchHandle
 

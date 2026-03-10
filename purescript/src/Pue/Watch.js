@@ -6,7 +6,7 @@ const mkHandle = (h) => ({
   resume: () => h.resume(),
 });
 
-export const watchSourceImpl = (source) => (callback) => (opts) => () =>
+export const watchImpl = (source) => (callback) => (opts) => () =>
   mkHandle(Vue.watch(source, (n, o) => { callback(n)(o)(); }, opts));
 
 export const watchEffectImpl = (effect) => (flush) => () =>
