@@ -1,7 +1,15 @@
 <template>
   <div>
     <section class="hero">
-      <p class="tagline">PureScript in Vue single-file components</p>
+      <h2 class="hero-title">
+        <span class="hero-pue">pue</span>
+        <span class="hero-eq">=</span>
+        <span class="hero-parts">PureScript + Vue</span>
+      </h2>
+      <p class="tagline">
+        Write <code>&lt;script lang="purs"&gt;</code> in Vue SFCs.
+        Type-safe reactivity, algebraic composition, zero runtime overhead.
+      </p>
       <p class="subtitle">{{ total }} interactive demos across {{ sections.length }} categories</p>
     </section>
     <div class="sections">
@@ -28,17 +36,56 @@ const total = sections.reduce((a, s) => a + s.count, 0)
 
 <style scoped>
 .hero {
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
+  padding: 2rem 0 1.5rem;
 }
+
+.hero-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.8rem;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.hero-pue {
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  background: var(--c-grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-eq {
+  color: var(--c-text-3);
+  font-weight: 200;
+}
+
+.hero-parts {
+  color: var(--c-text-2);
+}
+
 .tagline {
-  font-size: 1.15rem;
+  font-size: 1rem;
   color: var(--c-text-2);
   margin: 0;
+  line-height: 1.6;
+  max-width: 540px;
 }
+.tagline code {
+  font-size: 0.9em;
+  color: var(--c-accent);
+  background: var(--c-accent-soft);
+}
+
 .subtitle {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: var(--c-text-3);
-  margin: 0.25rem 0 0;
+  margin: 0.5rem 0 0;
 }
 
 .sections {

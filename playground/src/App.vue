@@ -1,8 +1,13 @@
 <template>
   <div id="app">
+    <div class="accent-bar"></div>
     <header>
       <div class="header-row">
-        <h1><router-link to="/" class="logo">pue</router-link> <span class="sub">playground</span></h1>
+        <router-link to="/" class="logo-link">
+          <span class="logo">pue</span>
+          <span class="logo-dot"></span>
+        </router-link>
+        <span class="sub">playground</span>
       </div>
       <nav>
         <router-link to="/reactivity">Reactivity</router-link>
@@ -28,9 +33,11 @@
   --c-text: #1a1a1a;
   --c-text-2: #555;
   --c-text-3: #888;
-  --c-accent: #5b4fc4;
+  --c-accent: #6c5ce7;
+  --c-accent-2: #a29bfe;
   --c-accent-soft: #ede9fe;
-  --c-accent-hover: #4a3fb0;
+  --c-accent-hover: #5a4bd5;
+  --c-grad: linear-gradient(135deg, #6c5ce7, #a29bfe);
   --c-code-bg: #f3f3f6;
   --radius: 8px;
   --radius-sm: 5px;
@@ -56,6 +63,14 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ── Accent Bar ── */
+
+.accent-bar {
+  height: 3px;
+  background: var(--c-grad);
+  margin: 0 -2rem;
+}
+
 /* ── Header ── */
 
 header {
@@ -70,17 +85,43 @@ header {
 .header-row {
   display: flex;
   align-items: baseline;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
-h1 { margin: 0; font-size: 1.5rem; letter-spacing: -0.02em; }
-h1 .logo {
-  color: var(--c-accent);
+.logo-link {
+  display: inline-flex;
+  align-items: baseline;
   text-decoration: none;
-  font-weight: 700;
+  gap: 0;
 }
-h1 .logo:hover { color: var(--c-accent-hover); }
-h1 .sub { font-weight: 300; color: var(--c-text-3); font-size: 0.85em; }
+
+.logo {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  background: var(--c-grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.logo-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c-accent-2);
+  display: inline-block;
+  margin-left: 1px;
+  margin-bottom: 2px;
+  vertical-align: baseline;
+  transition: background var(--transition);
+}
+
+.logo-link:hover .logo-dot {
+  background: var(--c-accent);
+}
+
+.sub { font-weight: 300; color: var(--c-text-3); font-size: 0.95rem; }
 
 nav {
   display: flex;
