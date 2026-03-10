@@ -1,19 +1,15 @@
 import * as Vue from "vue";
 
-export const watch = (source) => (callback) => () =>
-  Vue.watch(source, (newVal, oldVal) => { callback(newVal)(oldVal)(); });
+const mkHandle = (h) => ({
+  stop:   () => h(),
+  pause:  () => h.pause(),
+  resume: () => h.resume(),
+});
 
-export const watchImmediate = (source) => (callback) => () =>
-  Vue.watch(source, (newVal, oldVal) => { callback(newVal)(oldVal)(); }, { immediate: true });
+export const watchImpl = (source) => (callback) => (opts) => () =>
+  mkHandle(Vue.watch(source, (n, o) => { callback(n)(o)(); }, opts));
 
-export const watchOnce = (source) => (callback) => () =>
-  Vue.watch(source, (newVal, oldVal) => { callback(newVal)(oldVal)(); }, { once: true });
+export const watchEffectImpl = (effect) => (flush) => () =>
+  mkHandle(Vue.watchEffect(effect, { flush }));
 
-export const watchWith = (source) => (callback) => () =>
-  Vue.watch(source, (newVal, oldVal, onCleanup) => {
-    callback(newVal)(oldVal)((cleanup) => () => onCleanup(cleanup))();
-  });
-
-export const watchEffect = (effect) => () => Vue.watchEffect(effect);
-export const watchPostEffect = (effect) => () => Vue.watchPostEffect(effect);
-export const watchSyncEffect = (effect) => () => Vue.watchSyncEffect(effect);
+export const onCleanup = (cleanup) => () => Vue.onWatcherCleanup(cleanup);

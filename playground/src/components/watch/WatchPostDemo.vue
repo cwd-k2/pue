@@ -11,13 +11,13 @@
 <script lang="purs">
 import Prelude
 
-import Pue (Ref, ref, readRef, writeRef, modifyRef, watchPostEffect)
+import Pue (Ref, ref, readRef, writeRef, modifyRef, Flush(..), watchEffectWith)
 
 setup = do
   count  <- ref 0
   synced <- ref 0
 
-  _ <- watchPostEffect do
+  _ <- watchEffectWith Post do
     c <- readRef count
     writeRef c synced
 

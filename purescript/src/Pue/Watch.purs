@@ -1,6 +1,10 @@
 module Pue.Watch
-  ( watch, watchImmediate, watchOnce, watchWith
-  , watchEffect, watchPostEffect, watchSyncEffect
+  ( WatchHandle
+  , Flush(..)
+  , WatchOptions, watchOptions
+  , watch, watchWith
+  , watchEffect, watchEffectWith
+  , onCleanup
   ) where
 
 import Prelude
@@ -8,46 +12,102 @@ import Prelude
 import Effect (Effect)
 import Pue.Ref (Ref)
 
--- | Watch a single ref for changes. Returns a stop handle.
+-- | Handle returned by watch functions.
+-- | Supports stopping, pausing (3.5+), and resuming the watcher.
 -- |
 -- | ```purescript
--- | stop <- watch count \new old -> log ("changed: " <> show new)
+-- | handle <- watch count \new old -> log (show new)
+-- | handle.pause
+-- | handle.resume
+-- | handle.stop
 -- | ```
-foreign import watch :: forall a. Ref a -> (a -> a -> Effect Unit) -> Effect (Effect Unit)
+type WatchHandle =
+  { stop   :: Effect Unit
+  , pause  :: Effect Unit
+  , resume :: Effect Unit
+  }
 
--- | Watch with immediate invocation — the callback fires once
--- | with the current value before any changes occur.
-foreign import watchImmediate :: forall a. Ref a -> (a -> a -> Effect Unit) -> Effect (Effect Unit)
+-- | Flush timing for watch effects.
+data Flush = Pre | Post | Sync
 
--- | Watch that fires exactly once, then automatically stops.
-foreign import watchOnce :: forall a. Ref a -> (a -> a -> Effect Unit) -> Effect (Effect Unit)
+-- | Options for `watchWith`.
+type WatchOptions =
+  { immediate :: Boolean
+  , once      :: Boolean
+  , deep      :: Boolean
+  , flush     :: Flush
+  }
 
--- | Watch with cleanup registration.
--- |
--- | The callback receives `new`, `old`, and an `onCleanup` function.
--- | The registered cleanup runs before each re-invocation and on stop.
+-- | Default watch options: not immediate, not once, not deep, pre flush.
+watchOptions :: WatchOptions
+watchOptions = { immediate: false, once: false, deep: false, flush: Pre }
+
+-- | Watch a ref for changes.
 -- |
 -- | ```purescript
--- | stop <- watchWith query \q _ onCleanup -> do
--- |   cancel <- fetchResults q
--- |   onCleanup cancel
+-- | _ <- watch count \new old ->
+-- |   modifyRef (_ <> [show new]) history
 -- | ```
-foreign import watchWith :: forall a. Ref a -> (a -> a -> (Effect Unit -> Effect Unit) -> Effect Unit) -> Effect (Effect Unit)
+watch :: forall a. Ref a -> (a -> a -> Effect Unit) -> Effect WatchHandle
+watch = watchWith watchOptions
 
--- | Auto-tracking effect — dependencies are collected automatically
--- | by reading refs inside the callback. Returns a stop handle.
+-- | Watch a ref with explicit options.
 -- |
 -- | ```purescript
--- | stop <- watchEffect do
+-- | _ <- watchWith (watchOptions { deep = true, immediate = true }) obj \new old ->
+-- |   log "deep change detected"
+-- | ```
+watchWith :: forall a. WatchOptions -> Ref a -> (a -> a -> Effect Unit) -> Effect WatchHandle
+watchWith opts source cb = watchImpl source cb (toJsOpts opts)
+
+-- | Auto-tracking reactive effect with pre-flush timing (default).
+-- | Dependencies are collected by reading refs inside the callback.
+-- |
+-- | ```purescript
+-- | _ <- watchEffect do
 -- |   q <- readRef query
 -- |   log ("searching: " <> q)
 -- | ```
-foreign import watchEffect :: Effect Unit -> Effect (Effect Unit)
+watchEffect :: Effect Unit -> Effect WatchHandle
+watchEffect = watchEffectWith Pre
 
--- | `watchEffect` with post-DOM-update flush timing.
--- | Use when the effect needs to access updated DOM elements.
-foreign import watchPostEffect :: Effect Unit -> Effect (Effect Unit)
+-- | Auto-tracking effect with explicit flush timing.
+-- |
+-- | ```purescript
+-- | _ <- watchEffectWith Post do
+-- |   c <- readRef count
+-- |   writeRef c synced
+-- | ```
+watchEffectWith :: Flush -> Effect Unit -> Effect WatchHandle
+watchEffectWith flush eff = watchEffectImpl eff (flushStr flush)
 
--- | `watchEffect` with synchronous flush timing.
--- | Fires immediately on every reactive change — use sparingly.
-foreign import watchSyncEffect :: Effect Unit -> Effect (Effect Unit)
+-- | Register a cleanup function inside a watch or watchEffect callback.
+-- | The cleanup runs before each re-invocation and when the watcher stops.
+-- |
+-- | ```purescript
+-- | _ <- watch query \q _ -> do
+-- |   cancel <- fetchResults q
+-- |   onCleanup cancel
+-- | ```
+foreign import onCleanup :: Effect Unit -> Effect Unit
+
+-- Private
+
+flushStr :: Flush -> String
+flushStr = case _ of
+  Pre  -> "pre"
+  Post -> "post"
+  Sync -> "sync"
+
+toJsOpts :: WatchOptions -> { immediate :: Boolean, once :: Boolean, deep :: Boolean, flush :: String }
+toJsOpts { immediate, once, deep, flush } =
+  { immediate, once, deep, flush: flushStr flush }
+
+foreign import watchImpl
+  :: forall a
+   . Ref a
+  -> (a -> a -> Effect Unit)
+  -> { immediate :: Boolean, once :: Boolean, deep :: Boolean, flush :: String }
+  -> Effect WatchHandle
+
+foreign import watchEffectImpl :: Effect Unit -> String -> Effect WatchHandle
