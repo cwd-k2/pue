@@ -8,10 +8,10 @@
 <script lang="purs">
 import Prelude
 
-import Pue (DefineSlots, defineSlots, ref, modifyRef)
+import Pue (Define, define_, ref, modifyRef)
 
-slots :: DefineSlots { title :: {} }
-slots = defineSlots
+define :: Define ( slots :: { title :: {} } )
+define = define_
 
 setup = do
   count <- ref 0

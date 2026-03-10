@@ -1,6 +1,6 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import { readExterns, findPhantomRecord } from './externs'
+import { readExterns, findDefineRow, findPhantomRecord } from './externs'
 
 const VANILLA_SCRIPT_RE = /<script\b(?![^>]*\blang=)[^>]*>([\s\S]*?)<\/script>/
 
@@ -95,22 +95,23 @@ export function transformSFC(
 
   // Analyse props/emits/model/expose via externs (primary) + regex (fallback)
   const externs = readExterns(outputDir, moduleName)
+  const defineRow = externs ? findDefineRow(externs) : null
 
-  const definePropsMap = externs
-    ? findPhantomRecord(externs, 'DefineProps')
-    : extractDefineRecord(pursCode, 'props')
+  const definePropsMap = defineRow?.props
+    ?? (externs ? findPhantomRecord(externs, 'DefineProps') : null)
+    ?? extractDefineRecord(pursCode, 'props')
 
-  const defineEmitsMap = externs
-    ? findPhantomRecord(externs, 'DefineEmits')
-    : extractDefineRecord(pursCode, 'emits')
+  const defineEmitsMap = defineRow?.emits
+    ?? (externs ? findPhantomRecord(externs, 'DefineEmits') : null)
+    ?? extractDefineRecord(pursCode, 'emits')
 
-  const modelMap = externs
-    ? findPhantomRecord(externs, 'DefineModel')
-    : extractDefineRecord(pursCode, 'model')
+  const modelMap = defineRow?.model
+    ?? (externs ? findPhantomRecord(externs, 'DefineModel') : null)
+    ?? extractDefineRecord(pursCode, 'model')
 
-  const exposeMap = externs
-    ? findPhantomRecord(externs, 'DefineExpose')
-    : extractDefineRecord(pursCode, 'expose')
+  const exposeMap = defineRow?.expose
+    ?? (externs ? findPhantomRecord(externs, 'DefineExpose') : null)
+    ?? extractDefineRecord(pursCode, 'expose')
 
   // Runtime values — always regex (not in type info)
   const propsArray = extractStringArray(pursCode, 'props')
@@ -122,7 +123,7 @@ export function transformSFC(
   // Determine which exports are metadata vs user bindings
   const fields = extractRecordFields(pursCode)
   const fieldSet = new Set(fields ?? [])
-  const metaExports = new Set(['setup', 'props', 'emits', 'model', 'expose', 'options', 'slots', 'defaults'])
+  const metaExports = new Set(['setup', 'props', 'emits', 'model', 'expose', 'options', 'slots', 'defaults', 'define', 'define_'])
   const pureExports = exports.filter(e => !metaExports.has(e) && !fieldSet.has(e))
 
   const importNames = ['setup as __pue_setup', ...pureExports]

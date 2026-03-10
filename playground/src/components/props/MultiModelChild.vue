@@ -13,10 +13,10 @@
 <script lang="purs">
 import Prelude
 
-import Pue (DefineModel, defineModel, Ref, toRef)
+import Pue (Define, define_, toRef)
 
-model :: DefineModel { title :: String, content :: String }
-model = defineModel
+define :: Define ( model :: { title :: String, content :: String } )
+define = define_
 
 setup p emit = do
   titleRef   <- toRef @"title" p

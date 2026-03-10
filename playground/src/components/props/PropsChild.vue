@@ -11,13 +11,10 @@
 <script lang="purs">
 import Prelude
 
-import Pue (DefineProps, defineProps, DefineEmits, defineEmits, Ref, toRef)
+import Pue (Define, define_, toRef)
 
-props :: DefineProps { msg :: String, count :: Int }
-props = defineProps
-
-emits :: DefineEmits { notify :: Unit }
-emits = defineEmits
+define :: Define ( props :: { msg :: String, count :: Int }, emits :: { notify :: Unit } )
+define = define_
 
 setup p emit = do
   countRef <- toRef @"count" p

@@ -205,6 +205,35 @@ export function readExterns(outputDir: string, moduleName: string): ExternsFile 
 }
 
 /**
+ * Find a consolidated `Define` row declaration and extract
+ * each field (props, emits, model, expose, slots) as record field maps.
+ */
+export function findDefineRow(
+  externs: ExternsFile,
+): Record<string, Record<string, string>> | null {
+  for (const decl of externs.declarations) {
+    if (decl.tag !== 'value') continue
+
+    const rowType = unwrapPhantomType(decl.type, 'Define')
+    if (!rowType) continue
+
+    const result: Record<string, Record<string, string>> = {}
+    let current: SourceType = rowType
+    while (current.tag === 'RCons') {
+      const fieldName = current.label
+      const innerFields = extractRecordFields(current.type)
+      if (Object.keys(innerFields).length > 0) {
+        result[fieldName] = innerFields
+      }
+      current = current.rest
+    }
+
+    if (Object.keys(result).length > 0) return result
+  }
+  return null
+}
+
+/**
  * Find a phantom type declaration (DefineProps, DefineEmits, etc.)
  * and extract the record fields from its type argument.
  */
