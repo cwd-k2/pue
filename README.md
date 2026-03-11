@@ -23,16 +23,21 @@ setup = do
 
 PureScript's type system and algebraic structures meet Vue's reactivity. No code generation, no separate files — just `lang="purs"` in your `<script>` block.
 
-## Install
-
-```bash
-npm install pue purescript spago
-```
-
 ## Quick start
 
 ```bash
-npx pue init          # creates spago.dhall, packages.dhall, .gitignore
+npx pue init my-app
+cd my-app
+npm install
+npm run dev
+```
+
+This scaffolds a complete project — `package.json`, `vite.config.ts`, `spago.dhall`, source files, and editor config.
+
+### Adding to an existing project
+
+```bash
+npm install pue purescript spago
 ```
 
 **vite.config.ts**
@@ -47,7 +52,7 @@ export default defineConfig({
 })
 ```
 
-The plugin automatically adds `.pue/**/*.purs` and pue library sources to your spago config on first build. Module names are derived from file paths (`src/components/Counter.vue` → `App.Components.Counter`).
+Module names are derived from file paths (`src/components/Counter.vue` → `App.Components.Counter`). Standalone `.purs` files in source directories are also compiled.
 
 ## How it works
 
@@ -79,7 +84,7 @@ setup = do
 a <- ref 0
 b <- ref 0
 let total = a + b                -- Semiring: computed(() => a.value + b.value)
-let doubled = (_ * 2) <$> count  -- Functor
+let doubled = (_ * 2) <$> a      -- Functor
 let combined = lift2 gcd a b     -- Apply
 ```
 
@@ -93,22 +98,33 @@ let fahrenheit = focus (\c -> c * 9 / 5 + 32) (\f -> (f - 32) * 5 / 9) celsius
 
 ## Component declarations
 
-Use `DefineComponent` to declare props, emits, model, and other metadata in one place:
+Declare props and emits as module-level phantom values. The plugin extracts types from externs; `setup` accesses them via visible type applications:
 
 ```purescript
-import Pue (DefineComponent, defineComponent, toRef)
+import Prelude
+import Pue (DefineProps, defineProps, DefineEmits, defineEmits, emit, toRef)
 
+props :: DefineProps { msg :: String, count :: Int }
+props = defineProps
+
+emits :: DefineEmits { notify :: Unit }
+emits = defineEmits
+
+setup = do
+  countRef <- toRef @"count" props
+  let doubled = (_ * 2) <$> countRef
+  let notify  = emit @"notify" emits unit
+  pure { doubled, notify }
+```
+
+`DefineComponent` consolidates props, emits, model, expose, and slots into a single declaration when you don't need runtime access to the handles:
+
+```purescript
 define :: DefineComponent
   ( props :: { msg :: String, count :: Int }
   , emits :: { notify :: Unit }
   )
 define = defineComponent
-
-setup p emit = do
-  countRef <- toRef @"count" p
-  let doubled = (_ * 2) <$> countRef
-  let notify  = emit "notify" unit
-  pure { doubled, notify }
 ```
 
 Component options and prop defaults use identity macros:
