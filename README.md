@@ -157,6 +157,44 @@ setup = do
 
 See [docs/api.md](docs/api.md) for the full API reference.
 
+## Compared to Vue JS
+
+pue is not a different framework — it is Vue, with PureScript as the scripting language. Most differences are direct consequences of the type system.
+
+**What improves:**
+
+```purescript
+-- Reactive expressions: no .value, no computed(() => ...)
+let total = a + b                    -- vs computed(() => a.value + b.value)
+let label = show <$> count          -- vs computed(() => `${count.value}`)
+
+-- Pure vs effectful, visible in syntax
+let doubled = (_ * 2) <$> count     -- let: pure derivation
+count <- ref 0                       -- <-: side effect
+
+-- Type-safe provide/inject without InjectionKey boilerplate
+provide @"theme" "dark"
+theme <- inject @"theme" (pure "light")
+
+-- Bidirectional refs in one line
+let fahrenheit = focus (\c -> c * 9.0 / 5.0 + 32.0) (\f -> (f - 32.0) * 5.0 / 9.0) celsius
+```
+
+**What changes:**
+
+```purescript
+-- Props: explicit toRef (no proxy mechanism in PureScript)
+countRef <- toRef @"count" props     -- vs props.count
+
+-- Emits: phantom handle carries the row constraint
+emit @"notify" emits unit            -- vs emit('notify')
+
+-- Ref access: explicit functions instead of .value
+modifyRef (_ + 1) count              -- vs count.value++
+```
+
+See [docs/comparison.md](docs/comparison.md) for the full comparison.
+
 ## Editor support
 
 ```bash
@@ -172,6 +210,7 @@ See [docs/editor.md](docs/editor.md) for details.
 | Topic | Description |
 |-------|-------------|
 | [API reference](docs/api.md) | Complete PureScript API for Vue reactivity |
+| [Compared to Vue JS](docs/comparison.md) | What improves and what changes vs vanilla Vue |
 | [Type system](docs/type-system.md) | How Vue's reactivity maps to PureScript's types |
 | [Architecture](docs/architecture.md) | How the Vite plugin works internally |
 | [Editor support](docs/editor.md) | Neovim, VSCode, Volar setup |
